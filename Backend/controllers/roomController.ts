@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../utils/prisma";
+import { io } from "../app/server";
 
 function getUserId(req: Request) {
   return (req.user as any).id as string;
@@ -29,9 +30,6 @@ export async function createRoom(req: Request, res: Response) {
   }
 }
 
-/**
- * List rooms for a user (member of)
- */
 export async function listRoomsForUser(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
@@ -46,9 +44,6 @@ export async function listRoomsForUser(req: Request, res: Response) {
   }
 }
 
-/**
- * Get room details (only if member)
- */
 export async function getRoomDetails(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
@@ -70,9 +65,6 @@ export async function getRoomDetails(req: Request, res: Response) {
   }
 }
 
-/**
- * Owner can add a member directly by username
- */
 export async function addMemberByUsername(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
@@ -87,7 +79,6 @@ export async function addMemberByUsername(req: Request, res: Response) {
     const userToAdd = await prisma.user.findUnique({ where: { username } });
     if (!userToAdd) return res.status(404).json({ message: "User not found" });
 
-    // check already member
     const exists = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId: userToAdd.id } },
     });
@@ -104,9 +95,6 @@ export async function addMemberByUsername(req: Request, res: Response) {
   }
 }
 
-/**
- * A user can request to join a room (creates Invite)
- */
 export async function sendJoinRequest(req: Request, res: Response) {
   try {
     const fromUserId = getUserId(req);
@@ -115,13 +103,11 @@ export async function sendJoinRequest(req: Request, res: Response) {
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room) return res.status(404).json({ message: "Room not found" });
 
-    // if already member
     const already = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId: fromUserId } },
     });
     if (already) return res.status(400).json({ message: "Already a member" });
 
-    // create invite from requester to room owner
     const invite = await prisma.invite.create({
       data: {
         roomId,
@@ -138,9 +124,6 @@ export async function sendJoinRequest(req: Request, res: Response) {
   }
 }
 
-/**
- * Owner lists pending invites for the room
- */
 export async function listPendingInvites(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
@@ -162,14 +145,11 @@ export async function listPendingInvites(req: Request, res: Response) {
   }
 }
 
-/**
- * Owner responds to invite: accept or reject
- */
 export async function respondToInvite(req: Request, res: Response) {
   try {
     const ownerId = getUserId(req);
     const { roomId, inviteId } = req.params;
-    const { action } = req.body; // "ACCEPT" or "REJECT"
+    const { action } = req.body;
 
     const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
     if (!invite || invite.roomId !== roomId) return res.status(404).json({ message: "Invite not found" });
@@ -201,9 +181,6 @@ export async function respondToInvite(req: Request, res: Response) {
   }
 }
 
-/**
- * Post a message to room (user must be member)
- */
 export async function postMessage(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
@@ -219,8 +196,8 @@ export async function postMessage(req: Request, res: Response) {
     const message = await prisma.message.create({
       data: { roomId, senderId: userId, content },
     });
+    io.to(roomId).emit("newMessage", message);
 
-    // TODO: emit via socket.io here later
     res.status(201).json(message);
   } catch (err) {
     console.error(err);
@@ -228,9 +205,6 @@ export async function postMessage(req: Request, res: Response) {
   }
 }
 
-/**
- * Get messages with pagination
- */
 export async function getMessages(req: Request, res: Response) {
   try {
     const userId = getUserId(req);

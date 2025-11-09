@@ -1,17 +1,28 @@
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import { neon } from "@neondatabase/serverless";
-import authRoutes from "./../routes/authRoute.js";
-import passport from "passport";
 import session from "express-session";
+import passport from "passport";
+import { neon } from "@neondatabase/serverless";
+
+import authRoutes from "../routes/authRoute.js";
+import roomRoutes from "../routes/roomRoutes.js";
 import "../utils/passport.js";
-import roomRoutes from "../routes/roomRoutes";
-import userRoutes from "../routes/userRoutes.js";
 
 dotenv.config();
+
 const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  },
+});
 
 app.use(
   session({
@@ -25,14 +36,10 @@ app.use(
   })
 );
 
-const PORT: number = Number(process.env.PORT as string);
-const sql = neon(process.env.DATABASE_URL as string);
-
 app.use(
   cors({
     origin: [process.env.FRONTEND_URL as string],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
@@ -42,22 +49,50 @@ app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get("/", (req, res) => {
-  res.send("Welcome to Splitwise backend!");
-});
-
-// Defining routes
 app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
-app.use("/users", userRoutes);
 
+app.get("/", (_, res) => res.send("Splitwise backend running"));
 
-app.listen(PORT, async () => {
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("joinRoom", (roomId: string) => {
+    socket.join(roomId);
+    console.log(`User ${socket.id} joined room ${roomId}`);
+  });
+
+  socket.on("sendMessage", (data) => {
+    const { roomId, message } = data;
+    io.to(roomId).emit("newMessage", message);
+  });
+
+  socket.on("sendInvite", (data) => {
+    const { roomId, invite } = data;
+    io.to(roomId).emit("newInvite", invite);
+  });
+
+  socket.on("newExpense", (data) => {
+    const { roomId, expense } = data;
+    io.to(roomId).emit("expenseAdded", expense);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+const PORT = Number(process.env.PORT) || 5000;
+const sql = neon(process.env.DATABASE_URL as string);
+
+server.listen(PORT, async () => {
   try {
-    const result = await sql`SELECT NOW()`;
-    console.log(`Connected to database & server running at http://localhost:${PORT}`);
-  } catch (error) {
-    console.error("Error connecting to the database:", error);
+    await sql`SELECT NOW()`;
+    console.log("Connected to Neon DB");
+    console.log(`Server listening on http://localhost:${PORT}`);
+  } catch (err) {
+    console.error("Database error:", err);
   }
 });
 
+export { io };
