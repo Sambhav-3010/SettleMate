@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { neon } from "@neondatabase/serverless";
+import authRoutes from "./../routes/authRoute.js";
 
 dotenv.config();
 
@@ -25,6 +26,9 @@ app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("Welcome to Splitwise backend!");
 });
+
+// Routes
+app.use("/users", authRoutes);
 
 app.listen(PORT, async () => {
   try {
