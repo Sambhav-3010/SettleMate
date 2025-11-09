@@ -8,6 +8,7 @@ import passport from "passport";
 import session from "express-session";
 import "../utils/passport.js";
 import roomRoutes from "../routes/roomRoutes";
+import userRoutes from "../routes/userRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -48,6 +49,8 @@ app.get("/", (req, res) => {
 // Defining routes
 app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
+app.use("/users", userRoutes);
+
 
 app.listen(PORT, async () => {
   try {

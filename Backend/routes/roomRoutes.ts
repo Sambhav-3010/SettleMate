@@ -11,6 +11,7 @@ import {
   getRoomDetails,
   listRoomsForUser
 } from "../controllers/roomController";
+import expenseRoutes from "./expenseRoutes";
 
 const router = express.Router();
 
@@ -30,5 +31,8 @@ router.post("/:roomId/invites/:inviteId/respond", respondToInvite);
 // Messages
 router.post("/:roomId/messages", postMessage);
 router.get("/:roomId/messages", getMessages);
+
+// Expense
+router.use("/:roomId/expenses", expenseRoutes);
 
 export default router;
