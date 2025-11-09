@@ -18,12 +18,12 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   })
 );
 
-const PORT: number = Number(process.env.PORT) || 5000;
+const PORT: number = Number(process.env.PORT as string);
 const sql = neon(process.env.DATABASE_URL as string);
 
 app.use(
@@ -49,8 +49,7 @@ app.use("/auth", authRoutes);
 app.listen(PORT, async () => {
   try {
     const result = await sql`SELECT NOW()`;
-    console.log("Connected to neon database");
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Connected to database & server running at http://localhost:${PORT}`);
   } catch (error) {
     console.error("Error connecting to the database:", error);
   }

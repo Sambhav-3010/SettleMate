@@ -25,12 +25,10 @@ passport.use(
       try {
         const email = profile.emails?.[0]?.value;
         if (!email) return done(new Error("No email provided"));
-
         let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           const randomPassword = Math.floor(Math.random() * 90000000 + 10000000).toString();
           const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
           user = await prisma.user.create({
             data: {
               name: profile.displayName,
@@ -38,20 +36,19 @@ passport.use(
               username: email.split("@")[0],
               password: hashedPassword,
               upiId: "not_set",
-              accessToken: accessToken,
-              refreshToken: refreshToken,
+              accessToken,
+              refreshToken,
             },
           });
         } else {
           user = await prisma.user.update({
             where: { email },
             data: {
-              accessToken: accessToken,
-              refreshToken: refreshToken,
+              accessToken,
+              refreshToken,
             },
           });
         }
-
         return done(null, user);
       } catch (err) {
         console.error("Error in GoogleStrategy:", err);
