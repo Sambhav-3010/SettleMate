@@ -9,14 +9,76 @@ generator client {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  username      String   @unique
-  name          String
-  email         String   @unique
-  password      String
-  upiId         String
-  accessToken   String?
-  refreshToken  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String       @id @default(uuid())
+  username        String       @unique
+  name            String
+  email           String       @unique
+  password        String
+  upiId           String
+  accessToken     String?
+  refreshToken    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  ownedRooms      Room[]       @relation("UserOwnedRooms")
+  roomMembers     RoomMember[]
+  sentMessages    Message[]    @relation("UserSentMessages")
+  invitesSent     Invite[]     @relation("InviteFrom")
+  invitesReceived Invite[]     @relation("InviteTo")
+}
+
+model Room {
+  id        String       @id @default(uuid())
+  name      String
+  ownerId   String
+  owner     User         @relation("UserOwnedRooms", fields: [ownerId], references: [id])
+  members   RoomMember[]
+  messages  Message[]
+  invites   Invite[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model RoomMember {
+  id       String   @id @default(uuid())
+  roomId   String
+  userId   String
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+  room     Room     @relation(fields: [roomId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  roomId    String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id])
+  sender    User     @relation("UserSentMessages", fields: [senderId], references: [id])
+
+  @@index([roomId])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Invite {
+  id         String       @id @default(uuid())
+  roomId     String
+  fromUserId String
+  toUserId   String
+  status     InviteStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  room       Room         @relation(fields: [roomId], references: [id])
+  fromUser   User         @relation("InviteFrom", fields: [fromUserId], references: [id])
+  toUser     User         @relation("InviteTo", fields: [toUserId], references: [id])
+
+  @@unique([roomId, toUserId, fromUserId])
+  @@index([roomId])
 }

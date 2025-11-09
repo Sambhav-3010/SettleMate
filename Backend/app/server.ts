@@ -7,6 +7,7 @@ import authRoutes from "./../routes/authRoute.js";
 import passport from "passport";
 import session from "express-session";
 import "../utils/passport.js";
+import roomRoutes from "../routes/roomRoutes";
 
 dotenv.config();
 const app = express();
@@ -44,7 +45,9 @@ app.get("/", (req, res) => {
   res.send("Welcome to Splitwise backend!");
 });
 
+// Defining routes
 app.use("/auth", authRoutes);
+app.use("/rooms", roomRoutes);
 
 app.listen(PORT, async () => {
   try {
@@ -54,3 +57,4 @@ app.listen(PORT, async () => {
     console.error("Error connecting to the database:", error);
   }
 });
+
