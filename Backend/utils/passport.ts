@@ -2,8 +2,8 @@ import passport from "passport";
 import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
-import User from "../models/User";
-import { IUser } from "../models/User";
+import prisma from "./prisma";
+
 dotenv.config();
 
 passport.use(
@@ -16,8 +16,8 @@ passport.use(
     },
     async (
       _req: any,
-      _accessToken: string,
-      _refreshToken: string,
+      accessToken: string,
+      refreshToken: string,
       _params: any,
       profile: Profile,
       done: VerifyCallback
@@ -26,36 +26,48 @@ passport.use(
         const email = profile.emails?.[0]?.value;
         if (!email) return done(new Error("No email provided"));
 
-        let user = (await User.findOne({ email })) as IUser | null;
-
+        let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-          const pass = Math.floor(Math.random() * 90000000 + 10000000).toString();
-          const hashed = await bcrypt.hash(pass, 10);
+          const randomPassword = Math.floor(Math.random() * 90000000 + 10000000).toString();
+          const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
-          user = (new User({
-            name: profile.displayName,
-            email,
-            password: hashed,
-          }) as unknown) as IUser;
-
-          await user.save();
+          user = await prisma.user.create({
+            data: {
+              name: profile.displayName,
+              email,
+              username: email.split("@")[0],
+              password: hashedPassword,
+              upiId: "not_set",
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            },
+          });
+        } else {
+          user = await prisma.user.update({
+            where: { email },
+            data: {
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            },
+          });
         }
 
         return done(null, user);
       } catch (err) {
-        return done(err);
+        console.error("Error in GoogleStrategy:", err);
+        return done(err as Error);
       }
     }
   )
 );
 
 passport.serializeUser((user: any, done) => {
-  done(null, user._id);
+  done(null, user.id);
 });
 
 passport.deserializeUser(async (id: string, done) => {
   try {
-    const user = (await User.findById(id)) as IUser | null;
+    const user = await prisma.user.findUnique({ where: { id } });
     done(null, user);
   } catch (err) {
     done(err, null);

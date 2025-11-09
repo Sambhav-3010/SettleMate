@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { Router } from "express";
-import passport from "../utils/passport";
-import { googleAuth } from "../controllers/authController.js";
+import passport from "../utils/passport.js";
+import { googleAuth } from "../controllers/authController";
 dotenv.config();
 
 const router = Router();
@@ -13,7 +13,7 @@ router.get(
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login", session: false }),
+  passport.authenticate("google", { failureRedirect: process.env.FRONTEND_URL as string, session: false }),
   googleAuth
 );
 
