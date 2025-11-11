@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
-import prisma from "./prisma";
+import prisma from "./prisma.js";
 
 dotenv.config();
 

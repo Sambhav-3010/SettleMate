@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { Router } from "express";
 import passport from "../utils/passport.js";
-import { googleAuth } from "../controllers/authController";
+import { googleAuth } from "../controllers/authController.js";
 import { isAuthenticated } from '../middlewares/isAuthenticated.js';
 import prisma from '../utils/prisma.js';
 dotenv.config();

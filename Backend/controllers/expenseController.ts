@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../utils/prisma";
+import prisma from "../utils/prisma.js";
 
 function getUserId(req: Request) {
   return (req.user as any).id as string;
@@ -25,7 +25,7 @@ export async function createExpense(req: Request, res: Response) {
     });
     if (!member) return res.status(403).json({ message: "You are not a member of this room" });
     const members = await prisma.roomMember.findMany({ where: { roomId }, include: { user: true } });
-    const memberIds = members.map((m) => m.userId);
+    const memberIds = members.map((m: any) => m.userId);
 
     const totalCents = toCents(amount);
     let splitsToCreate: { userId: string; amountCents: number }[] = [];
@@ -57,7 +57,7 @@ export async function createExpense(req: Request, res: Response) {
       }
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const exp = await tx.expense.create({
         data: {
           roomId,
@@ -135,7 +135,7 @@ export async function getBalances(req: Request, res: Response) {
 
     const netCents: Record<string, number> = {};
     const members = await prisma.roomMember.findMany({ where: { roomId } });
-    members.forEach((m) => (netCents[m.userId] = 0));
+    members.forEach((m: any) => (netCents[m.userId] = 0));
 
     for (const exp of expenses) {
       const payer = exp.payerId;
@@ -150,7 +150,7 @@ export async function getBalances(req: Request, res: Response) {
 
     const userIds = Object.keys(netCents);
     const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, username: true, name: true } });
-    const balances = users.map((u) => ({
+    const balances = users.map((u: any) => ({
       userId: u.id,
       username: u.username,
       name: u.name,

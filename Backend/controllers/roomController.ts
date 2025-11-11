@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import prisma from "../utils/prisma";
-import { io } from "../app/server";
+import prisma from "../utils/prisma.js";
+import { io } from "../app/server.js";
 
 function getUserId(req: Request) {
   return (req.user as any).id as string;

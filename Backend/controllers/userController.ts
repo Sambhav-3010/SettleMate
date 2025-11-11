@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../utils/prisma";
+import prisma from "../utils/prisma.js";
 
 function getUserId(req: Request) {
   return (req.user as any).id as string;

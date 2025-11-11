@@ -1,6 +1,6 @@
 import express from "express";
-import { isAuthenticated } from "../middlewares/isAuthenticated";
-import { createExpense, listExpenses, getBalances } from "../controllers/expenseController";
+import { isAuthenticated } from "../middlewares/isAuthenticated.js";
+import { createExpense, listExpenses, getBalances } from "../controllers/expenseController.js";
 
 const router = express.Router({ mergeParams: true });
 

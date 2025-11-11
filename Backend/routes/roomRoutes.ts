@@ -1,5 +1,5 @@
 import express from "express";
-import { isAuthenticated } from "../middlewares/isAuthenticated";
+import { isAuthenticated } from "../middlewares/isAuthenticated.js";
 import {
   createRoom,
   addMemberByUsername,
@@ -10,8 +10,8 @@ import {
   getMessages,
   getRoomDetails,
   listRoomsForUser
-} from "../controllers/roomController";
-import expenseRoutes from "./expenseRoutes";
+} from "../controllers/roomController.js";
+import expenseRoutes from "./expenseRoutes.js";
 
 const router = express.Router();
 
