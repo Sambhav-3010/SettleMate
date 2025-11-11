@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/app/server.js",
   "scripts": {
-    "build": "tsc && cpx \"app/generated/prisma/**\" \"dist/app/generated/prisma\"",
+    "build": "prisma generate && tsc && cpx \"app/generated/prisma/**\" \"dist/app/generated/prisma\"",
     "start": "node -r dotenv/config dist/app/server.js",
     "dev": "nodemon --exec tsx app/server.ts"
   },
