@@ -11,5 +11,5 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+RUN DATABASE_URL="postgresql://dummy:dummy@dummy/dummy" npm run build
 CMD [ "npm", "start" ]
