@@ -12,6 +12,7 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,9 +20,11 @@ export default function ExpensesPage() {
         const userData = await apiClient.get("/users/me")
         setUser(userData)
         const expensesData = await apiClient.get("/users/me/expenses")
-        setExpenses(expensesData)
-      } catch (error) {
-        console.error("Failed to fetch expenses:", error)
+        setExpenses(Array.isArray(expensesData) ? expensesData : [])
+      } catch (err) {
+        console.error("Failed to fetch expenses:", err)
+        setError("Failed to load expenses. Please try again.")
+        setExpenses([])
       } finally {
         setLoading(false)
       }
@@ -30,16 +33,22 @@ export default function ExpensesPage() {
   }, [])
 
   return (
-    <div className="flex h-screen bg-slate-950">
+    <div className="flex h-screen bg-slate-950 flex-col md:flex-row overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         <Topbar userName={user?.name} />
-        <main className="flex-1 overflow-auto p-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-white mb-2">My Expenses</h1>
-              <p className="text-slate-400">All your shared expenses</p>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">
+          <div className="w-full max-w-4xl">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">My Expenses</h1>
+              <p className="text-sm sm:text-base text-slate-400">All your shared expenses</p>
             </div>
+
+            {error && (
+              <Card className="bg-red-950/50 border-red-500/30 p-4 mb-6">
+                <p className="text-red-400 text-sm">{error}</p>
+              </Card>
+            )}
 
             {loading ? (
               <div className="space-y-3">
@@ -52,33 +61,33 @@ export default function ExpensesPage() {
                 {expenses.map((expense) => (
                   <Card
                     key={expense.id}
-                    className="bg-gradient-to-r from-slate-900 to-emerald-950 border-emerald-500/20 hover:border-emerald-500/50 transition-all p-6"
+                    className="bg-gradient-to-r from-slate-900 to-emerald-950 border-emerald-500/20 hover:border-emerald-500/50 transition-all p-4 sm:p-6"
                   >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3 bg-emerald-500/20 rounded-xl">
-                          <DollarSign className="text-emerald-400" size={24} />
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                      <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                        <div className="p-2 sm:p-3 bg-emerald-500/20 rounded-xl flex-shrink-0">
+                          <DollarSign className="text-emerald-400" size={20} />
                         </div>
-                        <div>
-                          <p className="font-semibold text-white">{expense.description}</p>
-                          <p className="text-sm text-slate-400">
-                            Paid by {expense.paidBy.name} in {expense.roomId}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-white text-sm sm:text-base truncate">
+                            {expense.description}
                           </p>
+                          <p className="text-xs sm:text-sm text-slate-400 truncate">Paid by {expense.paidBy.name}</p>
                           <p className="text-xs text-slate-500 mt-1">
                             {expense.participants.length} participant{expense.participants.length !== 1 ? "s" : ""}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-emerald-400">₹{expense.amount.toFixed(2)}</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xl sm:text-2xl font-bold text-emerald-400">₹{expense.amount.toFixed(2)}</p>
                       </div>
                     </div>
                   </Card>
                 ))}
               </div>
             ) : (
-              <Card className="bg-slate-900/50 border-emerald-500/20 p-12 text-center">
-                <p className="text-slate-400">No expenses yet</p>
+              <Card className="bg-slate-900/50 border-emerald-500/20 p-8 sm:p-12 text-center">
+                <p className="text-slate-400 text-sm">No expenses yet</p>
               </Card>
             )}
           </div>

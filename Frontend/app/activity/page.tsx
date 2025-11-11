@@ -18,6 +18,7 @@ export default function ActivityPage() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,8 +40,9 @@ export default function ActivityPage() {
             timestamp: new Date(Date.now() - 3600000).toISOString(),
           },
         ])
-      } catch (error) {
-        console.error("Failed to fetch data:", error)
+      } catch (err) {
+        console.error("Failed to fetch data:", err)
+        setError("Failed to load activity. Please try again.")
       } finally {
         setLoading(false)
       }
@@ -49,16 +51,22 @@ export default function ActivityPage() {
   }, [])
 
   return (
-    <div className="flex h-screen bg-slate-950">
+    <div className="flex h-screen bg-slate-950 flex-col md:flex-row overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         <Topbar userName={user?.name} />
-        <main className="flex-1 overflow-auto p-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-white mb-2">Activity</h1>
-              <p className="text-slate-400">Recent updates from your rooms</p>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">
+          <div className="w-full max-w-4xl">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Activity</h1>
+              <p className="text-sm sm:text-base text-slate-400">Recent updates from your rooms</p>
             </div>
+
+            {error && (
+              <Card className="bg-red-950/50 border-red-500/30 p-4 mb-6">
+                <p className="text-red-400 text-sm">{error}</p>
+              </Card>
+            )}
 
             {loading ? (
               <div className="space-y-3">
@@ -71,16 +79,18 @@ export default function ActivityPage() {
                 {activities.map((activity) => (
                   <Card
                     key={activity.id}
-                    className="bg-gradient-to-r from-slate-900 to-emerald-950 border-emerald-500/20 hover:border-emerald-500/50 transition-all p-4"
+                    className="bg-gradient-to-r from-slate-900 to-emerald-950 border-emerald-500/20 hover:border-emerald-500/50 transition-all p-3 sm:p-4"
                   >
-                    <p className="text-white font-medium">{activity.description}</p>
-                    <p className="text-sm text-slate-400 mt-1">{new Date(activity.timestamp).toLocaleString()}</p>
+                    <p className="text-white font-medium text-sm sm:text-base">{activity.description}</p>
+                    <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                      {new Date(activity.timestamp).toLocaleString()}
+                    </p>
                   </Card>
                 ))}
               </div>
             ) : (
-              <Card className="bg-slate-900/50 border-emerald-500/20 p-12 text-center">
-                <p className="text-slate-400">No recent activity</p>
+              <Card className="bg-slate-900/50 border-emerald-500/20 p-8 sm:p-12 text-center">
+                <p className="text-slate-400 text-sm">No recent activity</p>
               </Card>
             )}
           </div>

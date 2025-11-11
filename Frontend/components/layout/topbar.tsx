@@ -23,18 +23,18 @@ export function Topbar({ userName = "User" }: TopbarProps) {
   }
 
   return (
-    <header className="h-16 bg-gradient-to-r from-slate-900 to-emerald-900 border-b border-emerald-800/30 flex items-center justify-between px-6 sticky top-0 z-40">
-      <div className="text-lg font-semibold bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">
+    <header className="h-16 bg-gradient-to-r from-slate-900 to-emerald-900 border-b border-emerald-800/30 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
+      <div className="text-sm sm:text-lg font-semibold bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent truncate">
         Welcome, {userName}
       </div>
 
       <div className="relative">
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-800/50 transition-colors"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg hover:bg-slate-800/50 transition-colors"
         >
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-400" />
-          <ChevronDown size={18} className="text-slate-400" />
+          <ChevronDown size={18} className="text-slate-400 hidden sm:block" />
         </button>
 
         {isDropdownOpen && (

@@ -16,6 +16,7 @@ export default function ProfilePage() {
   const [upiId, setUpiId] = useState("")
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -24,8 +25,9 @@ export default function ProfilePage() {
         const userData = await apiClient.get("/users/me")
         setUser(userData)
         setUpiId(userData.upiId || "")
-      } catch (error) {
-        console.error("Failed to fetch user:", error)
+      } catch (err) {
+        console.error("Failed to fetch user:", err)
+        setError("Failed to load profile. Please try again.")
       } finally {
         setLoading(false)
       }
@@ -39,8 +41,10 @@ export default function ProfilePage() {
     try {
       const updatedUser = await apiClient.put("/users/me", { upiId })
       setUser(updatedUser)
-    } catch (error) {
-      console.error("Failed to update profile:", error)
+      setError(null)
+    } catch (err) {
+      console.error("Failed to update profile:", err)
+      setError("Failed to save profile. Please try again.")
     } finally {
       setIsSaving(false)
     }
@@ -56,16 +60,22 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-950">
+    <div className="flex h-screen bg-slate-950 flex-col md:flex-row overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         <Topbar userName={user?.name} />
-        <main className="flex-1 overflow-auto p-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
-              <p className="text-slate-400">Manage your account settings</p>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">
+          <div className="w-full max-w-2xl">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Profile</h1>
+              <p className="text-sm sm:text-base text-slate-400">Manage your account settings</p>
             </div>
+
+            {error && (
+              <Card className="bg-red-950/50 border-red-500/30 p-4 mb-6">
+                <p className="text-red-400 text-sm">{error}</p>
+              </Card>
+            )}
 
             {loading ? (
               <div className="space-y-4">
@@ -73,32 +83,32 @@ export default function ProfilePage() {
                 <div className="h-20 bg-slate-800/50 rounded-2xl animate-pulse" />
               </div>
             ) : user ? (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* User Info Card */}
-                <Card className="bg-gradient-to-br from-slate-900 to-emerald-950 border-emerald-500/20 p-6">
+                <Card className="bg-gradient-to-br from-slate-900 to-emerald-950 border-emerald-500/20 p-4 sm:p-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm text-slate-400 font-medium">Name</label>
-                      <p className="text-lg text-white font-semibold mt-1">{user.name}</p>
+                      <label className="text-xs sm:text-sm text-slate-400 font-medium">Name</label>
+                      <p className="text-base sm:text-lg text-white font-semibold mt-1">{user.name}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-slate-400 font-medium">Email</label>
-                      <p className="text-lg text-white font-semibold mt-1">{user.email}</p>
+                      <label className="text-xs sm:text-sm text-slate-400 font-medium">Email</label>
+                      <p className="text-base sm:text-lg text-white font-semibold mt-1 break-all">{user.email}</p>
                     </div>
                   </div>
                 </Card>
 
                 {/* UPI ID Card */}
-                <Card className="bg-gradient-to-br from-slate-900 to-emerald-950 border-emerald-500/20 p-6">
+                <Card className="bg-gradient-to-br from-slate-900 to-emerald-950 border-emerald-500/20 p-4 sm:p-6">
                   <div className="space-y-4">
                     <label className="block">
-                      <span className="text-sm text-slate-400 font-medium">UPI ID (Optional)</span>
+                      <span className="text-xs sm:text-sm text-slate-400 font-medium">UPI ID (Optional)</span>
                       <Input
                         type="text"
                         placeholder="user@upi"
                         value={upiId}
                         onChange={(e) => setUpiId(e.target.value)}
-                        className="mt-2 bg-slate-900 border-emerald-500/20 text-white placeholder-slate-500"
+                        className="mt-2 bg-slate-900 border-emerald-500/20 text-white placeholder-slate-500 text-sm"
                       />
                     </label>
                     <Button
@@ -116,15 +126,15 @@ export default function ProfilePage() {
                 <Button
                   onClick={handleLogout}
                   variant="destructive"
-                  className="w-full py-6 rounded-xl font-semibold text-lg"
+                  className="w-full py-4 sm:py-6 rounded-xl font-semibold text-base sm:text-lg"
                 >
                   <LogOut size={20} className="mr-2" />
                   Logout
                 </Button>
               </div>
             ) : (
-              <Card className="bg-slate-900/50 border-emerald-500/20 p-12 text-center">
-                <p className="text-slate-400">Failed to load profile</p>
+              <Card className="bg-slate-900/50 border-emerald-500/20 p-8 sm:p-12 text-center">
+                <p className="text-slate-400 text-sm">Failed to load profile</p>
               </Card>
             )}
           </div>
