@@ -111,3 +111,29 @@ model Split {
 
   @@index([expenseId])
 }
+
+model LandingPage {
+  id             String    @id @default(uuid())
+  title          String
+  slug           String    @unique
+  shopifyPageId  String?   @unique // Stores the Shopify Page ID after publishing
+  status         String    @default("DRAFT") // e.g., DRAFT, PUBLISHED, UNPUBLISHED
+  liquidTemplate String?   // The generated Liquid code for the entire page
+  jsonSchema     String?   @db.Text // The generated JSON schema for the entire page
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  sections       Section[]
+}
+
+model Section {
+  id            String      @id @default(uuid())
+  type          String      // e.g., 'Hero', 'CTA', 'ProductGrid', 'Testimonials'
+  data          Json        // Stores the specific content and styling data for the section
+  order         Int         // The order of the section on the landing page
+  landingPageId String
+  landingPage   LandingPage @relation(fields: [landingPageId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([landingPageId])
+}
