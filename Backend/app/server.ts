@@ -7,6 +7,8 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
 import { neon } from "@neondatabase/serverless";
+import pgSession from "connect-pg-simple";
+import { Pool } from "pg";
 
 import authRoutes from "../routes/authRoute.js";
 import roomRoutes from "../routes/roomRoutes.js";
@@ -16,8 +18,11 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+const pgStore = pgSession(session);
 
-
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 app.use(
   cors({
@@ -29,19 +34,21 @@ app.use(
 
 app.use(
   session({
+    store: new pgStore({
+      pool,
+      tableName: "session",
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   })
 );
-
-
 
 app.use(express.json());
 app.use(cookieParser());

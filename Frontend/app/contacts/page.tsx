@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { useForm } from "react-hook-form"
+import axios from "axios"
 
 const mockPeople = [
   { id: "1", name: "Jack Smith", email: "jack@example.com", balance: 100 },
@@ -31,8 +32,9 @@ export default function ContactsPage() {
   const [isOpen, setIsOpen] = useState(false)
   const { register, handleSubmit, reset } = useForm()
 
-  const onSubmit = (data: any) => {
-    // Handle group creation
+  const onSubmit = async (data: any) => {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/rooms`, data, { withCredentials: true })
+    console.log(response.data)
     setIsOpen(false)
     reset()
   }
@@ -82,11 +84,7 @@ export default function ContactsPage() {
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Group Name</label>
-                      <Input placeholder="e.g., Weekend Trip" {...register("groupName", { required: true })} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Description (optional)</label>
-                      <Input placeholder="What's this group for?" {...register("description")} />
+                      <Input placeholder="e.g., Weekend Trip" {...register("name", { required: true })} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Add Members</label>

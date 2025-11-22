@@ -20,23 +20,22 @@ router.get(
 );
 
 router.get("/me", isAuthenticated, (req, res) => {
-  console.log(req.user)
   res.json({
     message: "true",
     user: {
-      username : req.user?.username,
-      name : req.user?.name,
-      email : req.user?.email,
-      id : req.user?.id,
+      username: req.user?.username,
+      name: req.user?.name,
+      email: req.user?.email,
+      id: req.user?.id,
     },
   });
 });
 
 router.put('/upi', isAuthenticated, async (req, res) => {
   const userId = (req.user as any)?.id;
-  
-  if(!userId){
-    return res.status(401).json({message: "Unautorize to access the route", success : true})
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unautorize to access the route", success: true })
   }
 
   const { upiId, username } = req.body;

@@ -15,24 +15,18 @@ import expenseRoutes from "./expenseRoutes.js";
 
 const router = express.Router();
 
-router.use(isAuthenticated);
+router.post("/", isAuthenticated, createRoom);
+router.get("/", isAuthenticated, listRoomsForUser);
+router.get("/:roomId", isAuthenticated, getRoomDetails);
 
-// Room lifecycle
-router.post("/", createRoom);
-router.get("/", listRoomsForUser);
-router.get("/:roomId", getRoomDetails);
+router.post("/:roomId/add-by-username", isAuthenticated, addMemberByUsername);
+router.post("/:roomId/request-join", isAuthenticated, sendJoinRequest);
+router.get("/:roomId/invites", isAuthenticated, listPendingInvites);
+router.post("/:roomId/invites/:inviteId/respond", isAuthenticated, respondToInvite);
 
-// Members & invites
-router.post("/:roomId/add-by-username", addMemberByUsername);
-router.post("/:roomId/request-join", sendJoinRequest);
-router.get("/:roomId/invites", listPendingInvites);
-router.post("/:roomId/invites/:inviteId/respond", respondToInvite);
+router.post("/:roomId/messages", isAuthenticated, postMessage);
+router.get("/:roomId/messages", isAuthenticated, getMessages);
 
-// Messages
-router.post("/:roomId/messages", postMessage);
-router.get("/:roomId/messages", getMessages);
-
-// Expense
-router.use("/:roomId/expenses", expenseRoutes);
+router.use("/:roomId/expenses", isAuthenticated, expenseRoutes);
 
 export default router;

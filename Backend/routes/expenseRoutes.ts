@@ -6,8 +6,8 @@ const router = express.Router({ mergeParams: true });
 
 router.use(isAuthenticated);
 
-router.post("/", createExpense);       // POST /rooms/:roomId/expenses
-router.get("/", listExpenses);         // GET  /rooms/:roomId/expenses
-router.get("/balances", getBalances);  // GET  /rooms/:roomId/balances
+router.post("/", createExpense);
+router.get("/", listExpenses);
+router.get("/balances", getBalances);
 
 export default router;

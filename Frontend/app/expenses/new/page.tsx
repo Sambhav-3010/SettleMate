@@ -7,36 +7,16 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-
-const expenseSchema = z.object({
-  description: z.string().min(1, "Description is required"),
-  amount: z.string().transform(Number).pipe(z.number().positive()),
-  category: z.string(),
-  date: z.string(),
-  splitType: z.enum(["equal", "percentage", "exact"]),
-})
-
-type ExpenseFormData = z.infer<typeof expenseSchema>
+import { useForm, Controller } from "react-hook-form"
 
 export default function AddExpensePage() {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<ExpenseFormData>({
-    resolver: zodResolver(expenseSchema),
-    defaultValues: { splitType: "equal", date: new Date().toISOString().split("T")[0] },
-  })
-  const splitType = watch("splitType")
+  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm()
+
   const [tab, setTab] = useState("individual")
 
-  const onSubmit = async (data: ExpenseFormData) => {
-    // Handle expense creation
-    console.log(data)
+  const onSubmit = (data: any) => {
+    console.log("Expense Submitted:", data)
+    reset()
   }
 
   return (
@@ -58,122 +38,116 @@ export default function AddExpensePage() {
 
             <TabsContent value="individual" className="space-y-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Description</label>
-                  <Input placeholder="e.g., Dinner" {...register("description")} />
-                  {errors.description && <p className="text-red-600 text-xs mt-1">{errors.description.message}</p>}
+                  <Input placeholder="e.g., Dinner" {...register("description", { required: true })} />
+                  {errors.description && <p className="text-red-600 text-xs mt-1">Description is required</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Amount</label>
-                  <Input type="number" step="0.01" placeholder="0.00" {...register("amount")} />
-                  {errors.amount && <p className="text-red-600 text-xs mt-1">{errors.amount.message}</p>}
+                  <Input type="number" step="0.01" placeholder="0.00" {...register("amount", { required: true })} />
+                  {errors.amount && <p className="text-red-600 text-xs mt-1">Amount is required</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Category</label>
-                  <Select>
-                    <SelectTrigger className="bg-input text-foreground">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border border-border">
-                      <SelectItem value="food">Food</SelectItem>
-                      <SelectItem value="transport">Transport</SelectItem>
-                      <SelectItem value="entertainment">Entertainment</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <Controller
+                    name="category"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange}>
+                        <SelectTrigger className="bg-input text-foreground">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border border-border">
+                          <SelectItem value="food">Food</SelectItem>
+                          <SelectItem value="transport">Transport</SelectItem>
+                          <SelectItem value="entertainment">Entertainment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+
+                  {errors.category && <p className="text-red-600 text-xs mt-1">Category is required</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Date</label>
-                  <Input type="date" {...register("date")} />
+                  <Input type="date" {...register("date", { required: true })} />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">With Person</label>
-                  <Input placeholder="Search contact..." />
+                  <Input placeholder="Search contact..." {...register("contact")} />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Paid By</label>
-                  <Select>
-                    <SelectTrigger className="bg-input text-foreground">
-                      <SelectValue placeholder="Select person" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border border-border">
-                      <SelectItem value="you">You</SelectItem>
-                      <SelectItem value="other">Other Person</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <Controller
+                    name="paidBy"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange}>
+                        <SelectTrigger className="bg-input text-foreground">
+                          <SelectValue placeholder="Select person" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="you">You</SelectItem>
+                          <SelectItem value="other">Other Person</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Split Type</label>
-                  <Select>
-                    <SelectTrigger className="bg-input text-foreground" {...register("splitType")}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border border-border">
-                      <SelectItem value="equal">Equal Split</SelectItem>
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="exact">Exact Amounts</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button type="submit" className="w-full">
-                  Create Expense
-                </Button>
+                <Button type="submit" className="w-full">Create Expense</Button>
               </form>
             </TabsContent>
 
             <TabsContent value="group" className="space-y-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Select Group</label>
-                  <Select>
-                    <SelectTrigger className="bg-input text-foreground">
-                      <SelectValue placeholder="Choose group" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border border-border">
-                      <SelectItem value="trip">Weekend Trip</SelectItem>
-                      <SelectItem value="apartment">Apartment</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <Controller
+                    name="group"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange}>
+                        <SelectTrigger className="bg-input text-foreground">
+                          <SelectValue placeholder="Choose group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="trip">Weekend Trip</SelectItem>
+                          <SelectItem value="apartment">Apartment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Description</label>
-                  <Input placeholder="e.g., Groceries" {...register("description")} />
+                  <Input placeholder="e.g., Groceries" {...register("groupDescription")} />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Amount</label>
-                  <Input type="number" step="0.01" placeholder="0.00" {...register("amount")} />
+                  <Input type="number" step="0.01" {...register("groupAmount")} />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Date</label>
-                  <Input type="date" {...register("date")} />
+                  <Input type="date" {...register("groupDate")} />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Paid By</label>
-                  <Select>
-                    <SelectTrigger className="bg-input text-foreground">
-                      <SelectValue placeholder="Select member" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border border-border">
-                      <SelectItem value="you">You</SelectItem>
-                      <SelectItem value="jack">Jack</SelectItem>
-                      <SelectItem value="sarah">Sarah</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button type="submit" className="w-full">
-                  Create Expense
-                </Button>
+                <Button type="submit" className="w-full">Create Expense</Button>
               </form>
             </TabsContent>
           </Tabs>

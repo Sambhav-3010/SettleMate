@@ -9,7 +9,8 @@ function getUserId(req: Request) {
 export async function createRoom(req: Request, res: Response) {
   try {
     const ownerId = getUserId(req);
-    const { name } = req.body;
+    console.log(req.body)
+    const { name, members } = req.body;
     if (!name) return res.status(400).json({ message: "name is required" });
 
     const room = await prisma.room.create({
@@ -17,7 +18,7 @@ export async function createRoom(req: Request, res: Response) {
         name,
         ownerId,
         members: {
-          create: [{ userId: ownerId, role: "owner" }],
+          create: [{ userId: ownerId, role: "owner" }, ...members.map((member: string) => ({ userId: member, role: "member" }))],
         },
       },
       include: { members: true },
