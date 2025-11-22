@@ -4,6 +4,19 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { useForm } from "react-hook-form"
+import axios from "axios"
+import { UserSearch } from "@/components/user-search"
+import { useState } from "react"
 
 const mockChartData = [
   { month: "Jan", amount: 450 },
@@ -32,6 +45,26 @@ const pieData = [
 ]
 
 export default function DashboardPage() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+  const { register, handleSubmit, reset } = useForm()
+
+  const onSubmit = async (data: any) => {
+    try {
+      const payload = {
+        ...data,
+        members: selectedUsers
+      }
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/rooms`, payload, { withCredentials: true })
+      console.log(response.data)
+      setIsOpen(false)
+      reset()
+      setSelectedUsers([])
+    } catch (error) {
+      console.error("Failed to create group:", error)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -146,11 +179,35 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-bold">My Groups</h2>
               <p className="text-sm text-muted-foreground mt-1">Chat with friends and split expenses</p>
             </div>
-            <Link href="/contacts">
-              <Button variant="outline" className="font-medium bg-transparent">
-                Create Group
-              </Button>
-            </Link>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="font-medium bg-transparent">
+                  Create Group
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="border border-border bg-card">
+                <DialogHeader>
+                  <DialogTitle>Create New Group</DialogTitle>
+                  <DialogDescription>Start a new expense group with your friends.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Group Name</label>
+                    <Input placeholder="e.g., Weekend Trip" {...register("name", { required: true })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Add Members</label>
+                    <UserSearch
+                      selectedUsers={selectedUsers}
+                      onSelect={setSelectedUsers}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Create Group
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {mockGroupData.map((group) => (

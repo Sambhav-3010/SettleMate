@@ -12,6 +12,7 @@ import { Pool } from "pg";
 
 import authRoutes from "../routes/authRoute.js";
 import roomRoutes from "../routes/roomRoutes.js";
+import userRoutes from "../routes/userRoutes.js";
 import "../utils/passport.js";
 
 dotenv.config();
@@ -57,6 +58,7 @@ app.use(passport.session());
 
 app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
+app.use("/users", userRoutes);
 
 app.get("/", (_, res) => res.send("Splitwise backend running"));
 

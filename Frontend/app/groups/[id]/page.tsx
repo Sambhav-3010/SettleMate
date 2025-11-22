@@ -33,7 +33,7 @@ export default function GroupPage() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-6 mb-8">
-          <Link href="/contacts">
+          <Link href="/dashboard">
             <Button variant="outline">← Back</Button>
           </Link>
           <div className="flex-1">

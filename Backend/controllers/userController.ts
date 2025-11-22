@@ -81,3 +81,33 @@ export async function getUserExpenses(req: Request, res: Response) {
     res.status(500).json({ message: "Failed to fetch user expenses" });
   }
 }
+
+export async function searchUsers(req: Request, res: Response) {
+  try {
+    const { query } = req.query;
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ message: "Query parameter is required" });
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { username: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+      },
+      take: 10,
+    });
+
+    res.json(users);
+  } catch (err) {
+    console.error("searchUsers error:", err);
+    res.status(500).json({ message: "Failed to search users" });
+  }
+}

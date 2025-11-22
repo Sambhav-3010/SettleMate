@@ -9,20 +9,38 @@ function getUserId(req: Request) {
 export async function createRoom(req: Request, res: Response) {
   try {
     const ownerId = getUserId(req);
-    console.log(req.body)
-    const { name, members } = req.body;
+    console.log(req.body);
+    const { name, members } = req.body; // members is array of userIds
     if (!name) return res.status(400).json({ message: "name is required" });
 
+    // 1. Create room with owner as the only member initially
     const room = await prisma.room.create({
       data: {
         name,
         ownerId,
         members: {
-          create: [{ userId: ownerId, role: "owner" }, ...members.map((member: string) => ({ userId: member, role: "member" }))],
+          create: [{ userId: ownerId, role: "owner" }],
         },
       },
       include: { members: true },
     });
+
+    // 2. Create invites for other selected users
+    if (members && Array.isArray(members) && members.length > 0) {
+      const inviteData = members.map((userId: string) => ({
+        roomId: room.id,
+        fromUserId: ownerId,
+        toUserId: userId,
+        status: "PENDING" as const, // Ensure it matches enum
+      }));
+
+      // Use createMany if your DB supports it (Postgres does)
+      // But Prisma createMany doesn't return created records easily, which is fine here.
+      await prisma.invite.createMany({
+        data: inviteData,
+        skipDuplicates: true,
+      });
+    }
 
     res.status(201).json(room);
   } catch (err) {
