@@ -3,16 +3,27 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { useAuth } from "@/contexts/authContext"
+import { useEffect } from "react"
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
+  const router = useRouter()
   const scrollToHowItWorks = () => {
     const element = document.getElementById("how-it-works")
     element?.scrollIntoView({ behavior: "smooth" })
   }
 
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard")
+    }
+  }, [user])
+
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Hero Section */}
       <section className="px-4 py-24 md:py-32 border-b border-border">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <div className="text-4xl md:text-5xl font-bold text-balance">
@@ -22,19 +33,27 @@ export default function LandingPage() {
             Easily track shared expenses, settle debts, and manage group spending with zero friction.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Link href="/sign-in">
-              <Button className="w-full sm:w-auto" size="lg">
-                Get Started
+            {user ? (
+              <Link href="/dashboard">
+                <Button className="w-full sm:w-auto" size="lg" variant="default">
+                  Go to dashboard
+                </Button>
+              </Link>
+            ) : <>
+              <Link href="/auth">
+                <Button className="w-full sm:w-auto" size="lg" variant="default">
+                  Get Started
+                </Button>
+              </Link>
+              <Button
+                onClick={scrollToHowItWorks}
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto bg-transparent"
+              >
+                See How It Works
               </Button>
-            </Link>
-            <Button
-              onClick={scrollToHowItWorks}
-              variant="outline"
-              size="lg"
-              className="w-full sm:w-auto bg-transparent"
-            >
-              See How It Works
-            </Button>
+            </>}
           </div>
         </div>
       </section>
@@ -138,7 +157,7 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl font-bold mb-6">Ready to Simplify Expenses?</h2>
           <p className="text-lg text-muted-foreground mb-8">Start splitting expenses with your friends today.</p>
-          <Link href="/sign-in">
+          <Link href="/auth">
             <Button size="lg">Get Started Now</Button>
           </Link>
         </div>

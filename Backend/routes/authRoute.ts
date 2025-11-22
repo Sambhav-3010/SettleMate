@@ -20,9 +20,15 @@ router.get(
 );
 
 router.get("/me", isAuthenticated, (req, res) => {
+  console.log(req.user)
   res.json({
     message: "true",
-    user: req.user,
+    user: {
+      username : req.user?.username,
+      name : req.user?.name,
+      email : req.user?.email,
+      id : req.user?.id,
+    },
   });
 });
 

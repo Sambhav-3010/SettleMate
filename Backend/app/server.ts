@@ -17,24 +17,7 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  },
-});
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET as string,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    },
-  })
-);
 
 app.use(
   cors({
@@ -43,6 +26,22 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET as string,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  })
+);
+
+
 
 app.use(express.json());
 app.use(cookieParser());
@@ -53,6 +52,13 @@ app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
 
 app.get("/", (_, res) => res.send("Splitwise backend running"));
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  },
+});
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
