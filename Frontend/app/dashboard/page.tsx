@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { useForm } from "react-hook-form"
 import axios from "axios"
 import { UserSearch } from "@/components/user-search"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const mockChartData = [
   { month: "Jan", amount: 450 },
@@ -27,11 +27,8 @@ const mockChartData = [
   { month: "Jun", amount: 600 },
 ]
 
-const mockGroupData = [
-  { id: "1", name: "Weekend Trip", members: 4, balance: -250 },
-  { id: "2", name: "Apartment", members: 3, balance: 150 },
-  { id: "3", name: "Game Night", members: 5, balance: -75 },
-]
+// Removed mockGroupData as we will fetch real data
+
 
 const mockBalanceData = [
   { id: "1", name: "Jack", amount: 100 },
@@ -47,7 +44,44 @@ const pieData = [
 export default function DashboardPage() {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+  const [groups, setGroups] = useState<any[]>([])
+  const [invites, setInvites] = useState<any[]>([])
   const { register, handleSubmit, reset } = useForm()
+
+  useEffect(() => {
+    fetchGroups()
+    fetchInvites()
+  }, [])
+
+  const fetchGroups = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me/rooms`, { withCredentials: true })
+      setGroups(response.data)
+    } catch (error) {
+      console.error("Failed to fetch groups:", error)
+    }
+  }
+
+  const fetchInvites = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me/invites`, { withCredentials: true })
+      setInvites(response.data)
+    } catch (error) {
+      console.error("Failed to fetch invites:", error)
+    }
+  }
+
+  const handleInviteResponse = async (inviteId: string, action: "ACCEPT" | "REJECT") => {
+    try {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/me/invites/${inviteId}/respond`, { action }, { withCredentials: true })
+      fetchInvites()
+      if (action === "ACCEPT") {
+        fetchGroups()
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} invite:`, error)
+    }
+  }
 
   const onSubmit = async (data: any) => {
     try {
@@ -60,6 +94,7 @@ export default function DashboardPage() {
       setIsOpen(false)
       reset()
       setSelectedUsers([])
+      fetchGroups()
     } catch (error) {
       console.error("Failed to create group:", error)
     }
@@ -210,19 +245,47 @@ export default function DashboardPage() {
             </Dialog>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockGroupData.map((group) => (
+            {/* Pending Invites */}
+            {invites.map((invite) => (
+              <div key={invite.id} className="group">
+                <div className="p-6 rounded-lg border border-yellow-500/50 bg-yellow-500/10 h-full flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="font-bold text-lg">{invite.room.name}</h3>
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-600">
+                      Invite
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">Invited by {invite.fromUser.username}</p>
+                  <div className="flex gap-2 mt-auto pt-4 border-t border-yellow-500/20">
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      onClick={() => handleInviteResponse(invite.id, "ACCEPT")}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => handleInviteResponse(invite.id, "REJECT")}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Active Groups */}
+            {groups.map((group) => (
               <div key={group.id} className="group">
                 <div className="p-6 rounded-lg border border-border bg-secondary hover:bg-muted transition-all duration-300 cursor-pointer h-full flex flex-col">
                   <div className="flex items-start justify-between mb-4">
                     <h3 className="font-bold text-lg">{group.name}</h3>
-                    <span
-                      className={`text-sm font-bold px-3 py-1 rounded-full ${group.balance > 0 ? "bg-background text-foreground" : "bg-foreground/10 text-foreground"}`}
-                    >
-                      {group.balance > 0 ? "+" : ""}
-                      {group.balance}
-                    </span>
+                    {/* Balance display would require fetching group balances, omitting for now */}
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">{group.members} members</p>
+                  <p className="text-xs text-muted-foreground mb-4">{group.members?.length || 0} members</p>
                   <div className="flex gap-2 mt-auto pt-4 border-t border-border">
                     <Link href={`/groups/${group.id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full bg-transparent">
