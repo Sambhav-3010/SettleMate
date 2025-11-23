@@ -200,7 +200,7 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
       // Send notification via chat
       if (socket) {
         const selectedMember = members.find(m => m.user.id === selectedMemberId)
-        const message = `💸 ${currentUser?.name || "Someone"} claims to have paid you ₹${calculatedAmount}. Please confirm if you received the payment.`
+        const message = `${currentUser?.name || "Someone"} claims to have paid you ₹${calculatedAmount}. Please confirm if you received the payment.`
 
         socket.emit("sendMessage", {
           roomId: id,
