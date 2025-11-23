@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
-import { neon } from "@neondatabase/serverless";
 import pgSession from "connect-pg-simple";
 import { Pool } from "pg";
 
@@ -23,6 +22,14 @@ const pgStore = pgSession(session);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
+
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+  process.exit(-1);
 });
 
 app.use(
@@ -98,15 +105,12 @@ io.on("connection", (socket) => {
 });
 
 const PORT = Number(process.env.PORT) || 5000;
-const sql = neon(process.env.DATABASE_URL as string);
 
 server.listen(PORT, async () => {
   try {
-    await sql`SELECT NOW()`;
-    console.log("Connected to Neon DB");
     console.log(`Server listening on http://localhost:${PORT}`);
   } catch (err) {
-    console.error("Database error:", err);
+    console.error("Startup error:", err);
   }
 });
 

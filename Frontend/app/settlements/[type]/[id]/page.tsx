@@ -1,91 +1,273 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect, use } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useForm } from "react-hook-form"
+import axios from "axios"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, Check, Wallet } from "lucide-react"
+import { io } from "socket.io-client"
 
-export default function SettlePage({ params }: { params: { type: string; id: string } }) {
-  const { register, handleSubmit } = useForm()
-  const [payer, setPayer] = useState("paying")
-  const isGroup = params.type === "group"
-  const balance = 100
+interface Member {
+  user: {
+    id: string
+    username: string
+    name: string
+  }
+}
+
+interface Expense {
+  id: string
+  payerId: string
+  amount: number
+  splits: { userId: string; amount: number }[]
+}
+
+export default function SettlePage({ params }: { params: Promise<{ type: string; id: string }> }) {
+  const { type, id } = use(params)
+  const { register, handleSubmit, setValue, watch } = useForm()
+  const [payer, setPayer] = useState<"paying" | "receiving">("paying")
+  const [members, setMembers] = useState<Member[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("")
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [calculatedAmount, setCalculatedAmount] = useState<number>(0)
+  const [socket, setSocket] = useState<any>(null)
+  const router = useRouter()
+
+  const isGroup = type === "group"
+
+  useEffect(() => {
+    const newSocket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
+      withCredentials: true,
+    })
+    setSocket(newSocket)
+
+    return () => {
+      newSocket.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchCurrentUser()
+    if (isGroup) {
+      fetchGroupData()
+    }
+  }, [id, isGroup])
+
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
+      setCurrentUser(res.data)
+    } catch (err) {
+      console.error("Failed to fetch current user", err)
+    }
+  }
+
+  const fetchGroupData = async () => {
+    try {
+      const [roomRes, expensesRes] = await Promise.all([
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}`, { withCredentials: true }),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/expenses`, { withCredentials: true })
+      ])
+      setMembers(roomRes.data.members)
+      setExpenses(expensesRes.data.expenses)
+    } catch (err) {
+      console.error("Failed to fetch group data", err)
+    }
+  }
+
+  const calculatePairwiseDebt = (otherUserId: string) => {
+    if (!currentUser) return 0
+
+    let balance = 0 // Positive means they owe me, Negative means I owe them
+
+    expenses.forEach(exp => {
+      const isPayerMe = exp.payerId === currentUser.id
+      const isPayerThem = exp.payerId === otherUserId
+
+      if (isPayerMe) {
+        // I paid. Did they split?
+        const split = exp.splits.find(s => s.userId === otherUserId)
+        if (split) {
+          balance += split.amount
+        }
+      } else if (isPayerThem) {
+        // They paid. Did I split?
+        const split = exp.splits.find(s => s.userId === currentUser.id)
+        if (split) {
+          balance -= split.amount
+        }
+      }
+    })
+
+    return balance
+  }
+
+  const handleMemberSelect = (memberId: string) => {
+    setSelectedMemberId(memberId)
+    if (!currentUser) return
+
+    const balance = calculatePairwiseDebt(memberId)
+
+    // If balance is positive, they owe me (I am receiving)
+    // If balance is negative, I owe them (I am paying)
+
+    if (balance > 0) {
+      setPayer("receiving")
+      setCalculatedAmount(balance)
+      setValue("amount", balance.toFixed(2))
+    } else if (balance < 0) {
+      setPayer("paying")
+      setCalculatedAmount(Math.abs(balance))
+      setValue("amount", Math.abs(balance).toFixed(2))
+    } else {
+      // Settled
+      setPayer("paying")
+      setCalculatedAmount(0)
+      setValue("amount", "0.00")
+    }
+  }
 
   const onSubmit = async (data: any) => {
-    // Handle settlement
-    console.log(data)
+    if (!selectedMemberId || !data.amount || parseFloat(data.amount) === 0) return
+
+    try {
+      const amount = parseFloat(data.amount)
+
+      // We only allow recording if "I'm Paying" because backend restricts payer to logged-in user.
+      if (payer === "receiving") {
+        alert("You can only record payments you make. Please ask the other person to record this payment.")
+        return
+      }
+
+      const payload = {
+        amount: amount,
+        description: "Settlement",
+        splits: [
+          { userId: selectedMemberId, amount: amount }
+        ]
+      }
+
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/expenses`, payload, {
+        withCredentials: true,
+      })
+
+      // Send notification via chat
+      if (socket) {
+        const selectedMember = members.find(m => m.user.id === selectedMemberId)
+        const message = `💸 Settled up $${amount} with ${selectedMember?.user.name || "user"}. Have you received it?`
+
+        socket.emit("sendMessage", {
+          roomId: id,
+          message: {
+            roomId: id,
+            content: message,
+            senderId: currentUser.id,
+          }
+        })
+
+        // Also persist message to DB
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/messages`, {
+          content: message
+        }, { withCredentials: true })
+      }
+
+      router.push(`/groups/${id}`)
+    } catch (err) {
+      console.error("Failed to record settlement", err)
+    }
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href={isGroup ? `/groups/${params.id}` : `/person/${params.id}`}>
-            <Button variant="outline">← Back</Button>
+    <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex items-center gap-4">
+          <Link href={isGroup ? `/groups/${id}` : `/person/${id}`}>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-secondary">
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
           </Link>
-          <h1 className="text-3xl font-bold">Settle Up</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Settle Up</h1>
         </div>
 
-        <Card className="p-8 border border-border mb-8">
-          <p className="text-muted-foreground text-sm mb-2">Current Balance</p>
-          <p className="text-4xl font-bold text-green-600">You are owed ${balance}</p>
-        </Card>
+        <Card className="border-border bg-card/50 backdrop-blur-sm shadow-xl">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto bg-primary/10 p-4 rounded-full mb-4 w-fit">
+              <Wallet className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-xl">Record a Payment</CardTitle>
+            <CardDescription>Select a friend to settle your debts.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {isGroup && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Settling with</label>
+                  <Select onValueChange={handleMemberSelect}>
+                    <SelectTrigger className="h-12 bg-secondary/50 border-border focus:ring-primary">
+                      <SelectValue placeholder="Select a friend" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {members
+                        .filter(m => m.user.id !== currentUser?.id)
+                        .map(m => (
+                          <SelectItem key={m.user.id} value={m.user.id}>
+                            {m.user.name || m.user.username}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-        <Card className="p-8 border border-border">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {isGroup && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Settling with Member</label>
-                <Select>
-                  <SelectTrigger className="bg-input text-foreground">
-                    <SelectValue placeholder="Select member" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border border-border">
-                    <SelectItem value="jack">Jack Smith</SelectItem>
-                    <SelectItem value="sarah">Sarah Jones</SelectItem>
-                  </SelectContent>
-                </Select>
+              {selectedMemberId && (
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border text-center space-y-1 animate-in fade-in slide-in-from-top-2">
+                  <p className="text-sm text-muted-foreground">
+                    {payer === "paying" ? "You owe" : "You are owed"}
+                  </p>
+                  <p className={`text-3xl font-bold ${payer === "paying" ? "text-red-500" : "text-green-500"}`}>
+                    ${calculatedAmount.toFixed(2)}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    readOnly
+                    className="pl-8 h-12 text-lg font-bold bg-secondary/50 border-border"
+                    {...register("amount")}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Amount is auto-calculated based on your expenses.
+                </p>
               </div>
-            )}
 
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => setPayer("paying")}
-                className={`flex-1 p-4 rounded-md border-2 transition-colors ${
-                  payer === "paying" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
-                }`}
+              <Button
+                type="submit"
+                className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20"
+                disabled={!selectedMemberId || calculatedAmount === 0 || payer === "receiving"}
               >
-                <p className="font-bold">I'm Paying</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPayer("receiving")}
-                className={`flex-1 p-4 rounded-md border-2 transition-colors ${
-                  payer === "receiving" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
-                }`}
-              >
-                <p className="font-bold">I'm Receiving</p>
-              </button>
-            </div>
+                {payer === "receiving" ? "Ask for Payment" : "Pay & Settle"}
+              </Button>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Amount</label>
-              <Input type="number" step="0.01" placeholder="0.00" {...register("amount")} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Note (optional)</label>
-              <Input placeholder="Add a note..." {...register("note")} />
-            </div>
-
-            <Button type="submit" className="w-full">
-              Record Settlement
-            </Button>
-          </form>
+              {payer === "receiving" && (
+                <p className="text-xs text-yellow-500 text-center">
+                  Note: You cannot record a payment from someone else. They must record it.
+                </p>
+              )}
+            </form>
+          </CardContent>
         </Card>
       </div>
     </main>

@@ -8,6 +8,10 @@ export const prisma =
     log: ["error", "warn"],
   });
 
+if (!globalForPrisma.prisma) {
+  console.log("Initialized new Prisma Client");
+}
+
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export default prisma;

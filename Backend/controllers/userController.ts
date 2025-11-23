@@ -5,7 +5,6 @@ function getUserId(req: Request) {
   return (req.user as any).id as string;
 }
 
-// 1. Get logged-in user profile
 export async function getProfile(req: Request, res: Response) {
   try {
     const userId = getUserId(req);

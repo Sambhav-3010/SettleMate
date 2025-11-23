@@ -5,28 +5,42 @@ import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ChatModal } from "@/components/chat-modal"
+import { AddExpenseModal } from "@/components/add-expense-modal"
+import { ExpenseList } from "@/components/expense-list"
+import { Balances } from "@/components/balances"
+import { useState, useEffect } from "react"
+import axios from "axios"
 
-const mockGroupBalances = [
-  { person: "You", amount: -50, type: "owe" },
-  { person: "Jack", amount: 100, type: "owed" },
-  { person: "Sarah", amount: 75, type: "owed" },
-]
-
-const mockGroupMembers = [
-  { name: "You", role: "Admin" },
-  { name: "Jack Smith", role: "Member" },
-  { name: "Sarah Jones", role: "Member" },
-]
-
-const mockExpenses = [
-  { id: "1", description: "Dinner", amount: 120, paidBy: "You", date: "2024-01-15" },
-  { id: "2", description: "Hotel", amount: 300, paidBy: "Jack", date: "2024-01-14" },
-]
+interface Member {
+  user: {
+    id: string
+    username: string
+    name: string
+  }
+  role: string
+}
 
 export default function GroupPage() {
   const params = useParams<{ id: string }>()
-  const groupName = "Weekend Trip"
-  const groupDescription = "Trip to the mountains"
+  const [groupName, setGroupName] = useState("Loading...")
+  const [members, setMembers] = useState<Member[]>([])
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  useEffect(() => {
+    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${params.id}`, { withCredentials: true })
+      .then(res => {
+        setGroupName(res.data.name)
+        setMembers(res.data.members)
+      })
+      .catch(err => console.error("Failed to fetch room", err))
+  }, [params.id])
+
+  const handleExpenseAdded = () => {
+    setRefreshTrigger(prev => prev + 1)
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -36,84 +50,80 @@ export default function GroupPage() {
           <Link href="/dashboard">
             <Button variant="outline">← Back</Button>
           </Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">{groupName}</h1>
-            <p className="text-muted-foreground">{groupDescription}</p>
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold mb-2">{groupName}</h1>
+            <p className="text-muted-foreground">{members.length} members</p>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex gap-4 mb-8">
-          <Link href={`/chat/room/${params.id}`}>
-            <Button className="font-medium">Open Chat Room</Button>
-          </Link>
+          <Button className="font-medium" onClick={() => setIsAddExpenseOpen(true)}>
+            Add Expense
+          </Button>
+          <Button variant="outline" className="font-medium" onClick={() => setIsChatOpen(true)}>
+            Open Chat Room
+          </Button>
           <Link href={`/settlements/group/${params.id}`}>
             <Button variant="outline">Settle Up</Button>
-          </Link>
-          <Link href={`/expenses/new?group=${params.id}`}>
-            <Button variant="outline">Add Expense</Button>
           </Link>
         </div>
 
         {/* Grid Layout */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          {/* Group Balances */}
-          <Card className="lg:col-span-2 p-6 border border-border">
-            <h2 className="text-lg font-bold mb-4">Balances</h2>
-            <div className="space-y-3">
-              {mockGroupBalances.map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-md bg-secondary">
-                  <span className="font-medium">{item.person}</span>
-                  <span className={item.type === "owe" ? "text-red-600 font-bold" : "text-green-600 font-bold"}>
-                    {item.type === "owe" ? "-" : "+"}
-                    {Math.abs(item.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
           {/* Group Members */}
           <Card className="p-6 border border-border">
             <h2 className="text-lg font-bold mb-4">Members</h2>
             <div className="space-y-3">
-              {mockGroupMembers.map((member, i) => (
-                <div key={i} className="p-3 rounded-md bg-secondary">
-                  <p className="font-medium">{member.name}</p>
-                  <p className="text-xs text-muted-foreground">{member.role}</p>
-                </div>
-              ))}
+              <div className="space-y-3">
+                {members.map((member) => (
+                  <div key={member.user.id} className="p-3 rounded-md bg-secondary">
+                    <p className="font-medium">{member.user.name || member.user.username}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </Card>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="expenses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-secondary">
+          <TabsList className="grid w-full grid-cols-3 bg-secondary">
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="settlements">Settlements</TabsTrigger>
+            <TabsTrigger value="balances">Balances</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="expenses" className="space-y-4">
-            {mockExpenses.map((expense) => (
-              <Card key={expense.id} className="p-4 border border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-bold">{expense.description}</p>
-                  <p className="font-bold">${expense.amount}</p>
-                </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <p>{expense.paidBy} paid</p>
-                  <p>{expense.date}</p>
-                </div>
-              </Card>
-            ))}
+          <TabsContent value="expenses" className="mt-6">
+            <ExpenseList roomId={params.id} refreshTrigger={refreshTrigger} />
           </TabsContent>
 
-          <TabsContent value="settlements">
-            <p className="text-muted-foreground">No settlements yet</p>
+          <TabsContent value="balances" className="mt-6">
+            <Balances roomId={params.id} refreshTrigger={refreshTrigger} />
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Group Settings</h3>
+              <p className="text-muted-foreground">Group settings content will go here.</p>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      <ChatModal
+        isOpen={isChatOpen}
+        onOpenChange={setIsChatOpen}
+        roomId={params.id}
+      />
+
+      <AddExpenseModal
+        isOpen={isAddExpenseOpen}
+        onOpenChange={setIsAddExpenseOpen}
+        roomId={params.id}
+        onSuccess={handleExpenseAdded}
+      />
     </main>
   )
 }

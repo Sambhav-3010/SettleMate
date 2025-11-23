@@ -17,35 +17,24 @@ import { useForm } from "react-hook-form"
 import axios from "axios"
 import { UserSearch } from "@/components/user-search"
 import { useState, useEffect } from "react"
+import { ChatModal } from "@/components/chat-modal"
 
-const mockChartData = [
-  { month: "Jan", amount: 450 },
-  { month: "Feb", amount: 320 },
-  { month: "Mar", amount: 680 },
-  { month: "Apr", amount: 520 },
-  { month: "May", amount: 750 },
-  { month: "Jun", amount: 600 },
-]
-
-// Removed mockGroupData as we will fetch real data
-
-
-const mockBalanceData = [
-  { id: "1", name: "Jack", amount: 100 },
-  { id: "2", name: "Sarah", amount: -50 },
-  { id: "3", name: "Mike", amount: 75 },
-]
-
-const pieData = [
-  { name: "Owed to you", value: 275 },
-  { name: "You owe", value: 400 },
-]
+interface FriendBalance {
+  id: string
+  name: string
+  amount: number
+}
 
 export default function DashboardPage() {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [groups, setGroups] = useState<any[]>([])
   const [invites, setInvites] = useState<any[]>([])
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [activeChatRoomId, setActiveChatRoomId] = useState<string | null>(null)
+  const [totalOwed, setTotalOwed] = useState(0)
+  const [totalOwe, setTotalOwe] = useState(0)
+  const [friendBalances, setFriendBalances] = useState<FriendBalance[]>([])
   const { register, handleSubmit, reset } = useForm()
 
   useEffect(() => {
@@ -53,13 +42,62 @@ export default function DashboardPage() {
     fetchInvites()
   }, [])
 
+  const openChat = (roomId: string) => {
+    setActiveChatRoomId(roomId)
+    setIsChatOpen(true)
+  }
+
   const fetchGroups = async () => {
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me/rooms`, { withCredentials: true })
       setGroups(response.data)
+      calculateBalances(response.data)
     } catch (error) {
       console.error("Failed to fetch groups:", error)
     }
+  }
+
+  const calculateBalances = async (rooms: any[]) => {
+    let owed = 0
+    let owe = 0
+    const friendsMap: Record<string, FriendBalance> = {}
+
+    for (const room of rooms) {
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/expenses/balances`, { withCredentials: true })
+        const balances = res.data.balances
+
+        // Find current user's balance in this room (not directly provided by endpoint, need to infer or adjust endpoint)
+        // Actually the endpoint returns balances for all users. We need to find "my" net balance relative to others?
+        // Wait, the endpoint returns { userId, username, net }. 
+        // If I am User A, and net is +10, it means I am owed 10.
+        // But this is the net balance in the group. 
+
+        // Let's assume we can filter by "my" user ID, but we don't have it easily here without another call.
+        // Instead, let's look at all balances. 
+        // Actually, to show "Friend Balances", we need to know who owes whom. 
+        // The current `getBalances` endpoint returns net balances for everyone. 
+        // It doesn't explicitly say "Alice owes Bob". 
+        // However, for the "Overall Balance" and "You Owe/Owed", we can sum up the current user's net balance across groups.
+
+        // We need the current user's ID to find their balance.
+        const meRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
+        const myId = meRes.data.id
+
+        const myBalance = balances.find((b: any) => b.userId === myId)
+        if (myBalance) {
+          if (myBalance.net > 0) owed += myBalance.net
+          else if (myBalance.net < 0) owe += Math.abs(myBalance.net)
+        }
+
+        // For friend balances, this is complex without a specific endpoint. 
+        // We'll skip detailed friend balances for now and just show the totals.
+      } catch (err) {
+        console.error(`Failed to fetch balances for room ${room.id}`, err)
+      }
+    }
+    setTotalOwed(owed)
+    setTotalOwe(owe)
   }
 
   const fetchInvites = async () => {
@@ -123,16 +161,29 @@ export default function DashboardPage() {
             <p className="text-muted-foreground text-sm font-medium mb-4">Overall Balance</p>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-5xl font-bold mb-2">-$125.00</p>
-                <p className="text-sm text-muted-foreground">You owe money to friends</p>
+                <p className={`text-5xl font-bold mb-2 ${totalOwed - totalOwe >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  ${(totalOwed - totalOwe).toFixed(2)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {totalOwed - totalOwe >= 0 ? "You are owed in total" : "You owe in total"}
+                </p>
               </div>
               <div className="text-right">
                 <div className="inline-block bg-secondary rounded-lg p-4">
                   <ResponsiveContainer width={150} height={120}>
                     <PieChart>
-                      <Pie data={pieData} innerRadius={40} outerRadius={60} paddingAngle={2} dataKey="value">
-                        <Cell fill="var(--foreground)" />
-                        <Cell fill="var(--muted)" />
+                      <Pie
+                        data={[
+                          { name: "Owed to you", value: totalOwed },
+                          { name: "You owe", value: totalOwe },
+                        ]}
+                        innerRadius={40}
+                        outerRadius={60}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        <Cell fill="#16a34a" /> {/* Green for owed to you */}
+                        <Cell fill="#dc2626" /> {/* Red for you owe */}
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
@@ -146,11 +197,11 @@ export default function DashboardPage() {
             <div className="space-y-6">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Are Owed</p>
-                <p className="text-3xl font-bold text-foreground">$275.00</p>
+                <p className="text-3xl font-bold text-green-600">${totalOwed.toFixed(2)}</p>
               </div>
               <div className="border-t border-border pt-4">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Owe</p>
-                <p className="text-3xl font-bold text-foreground">$400.00</p>
+                <p className="text-3xl font-bold text-red-600">${totalOwe.toFixed(2)}</p>
               </div>
             </div>
           </Card>
@@ -166,43 +217,16 @@ export default function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Last 6 months overview</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={mockChartData}>
-                <CartesianGrid stroke="var(--border)" vertical={false} />
-                <XAxis stroke="var(--muted-foreground)" style={{ fontSize: "12px" }} />
-                <YAxis stroke="var(--muted-foreground)" style={{ fontSize: "12px" }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    color: "var(--foreground)",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Bar dataKey="amount" fill="var(--primary)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+              Chart data aggregation not implemented yet
+            </div>
           </Card>
 
           {/* Balance Details - Sidebar */}
           <Card className="p-8 border border-border bg-card">
             <h2 className="text-lg font-bold mb-6">Friend Balances</h2>
             <div className="space-y-4">
-              {mockBalanceData.map((balance) => (
-                <Link key={balance.id} href={`/person/${balance.id}`}>
-                  <div className="p-4 rounded-lg hover:bg-secondary transition-colors cursor-pointer border border-transparent hover:border-border group">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm group-hover:text-foreground">{balance.name}</span>
-                      <span
-                        className={`font-bold text-sm ${balance.amount > 0 ? "text-foreground" : "text-muted-foreground"}`}
-                      >
-                        {balance.amount > 0 ? "+" : ""}
-                        {balance.amount}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+              <p className="text-muted-foreground text-sm">Friend balance aggregation not implemented yet</p>
             </div>
           </Card>
         </div>
@@ -292,16 +316,20 @@ export default function DashboardPage() {
                         View
                       </Button>
                     </Link>
-                    <Link href={`/chat/room/${group.id}`} className="flex-1">
-                      <Button size="sm" className="w-full">
-                        Chat
-                      </Button>
-                    </Link>
+                    <Button size="sm" className="w-full flex-1" onClick={() => openChat(group.id)}>
+                      Chat
+                    </Button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
+          <ChatModal
+            isOpen={isChatOpen}
+            onOpenChange={setIsChatOpen}
+            roomId={activeChatRoomId}
+          />
         </Card>
 
         {/* Quick Actions Footer */}
