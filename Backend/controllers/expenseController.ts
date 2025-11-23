@@ -212,12 +212,10 @@ export async function confirmSettlement(req: Request, res: Response) {
       return res.status(400).json({ message: "Settlement already confirmed" });
     }
 
-    // Verify the current user is the receiver
     if (expense.receiverId !== userId) {
       return res.status(403).json({ message: "Only the receiver can confirm this settlement" });
     }
 
-    // Update the expense to mark it as confirmed
     const updatedExpense = await prisma.expense.update({
       where: { id: expenseId },
       data: { confirmed: true },
@@ -226,6 +224,19 @@ export async function confirmSettlement(req: Request, res: Response) {
         splits: { include: { user: { select: { id: true, username: true, name: true } } } },
       },
     });
+
+    const message = await prisma.message.create({
+      data: {
+        roomId,
+        senderId: userId,
+        content: `Settlement confirmed have recieved the money`,
+      },
+      include: {
+        sender: { select: { id: true, username: true, name: true } },
+      },
+    });
+
+    io.to(roomId).emit("newMessage", message);
 
     res.json({ message: "Settlement confirmed", expense: updatedExpense });
   } catch (err) {
@@ -264,22 +275,27 @@ export async function rejectSettlement(req: Request, res: Response) {
       return res.status(400).json({ message: "Settlement already confirmed" });
     }
 
-    // Verify the current user is the receiver
     if (expense.receiverId !== userId) {
       return res.status(403).json({ message: "Only the receiver can reject this settlement" });
     }
 
-    // Delete the expense
     await prisma.expense.delete({
       where: { id: expenseId },
     });
 
-    // Emit a system message to the room indicating settlement rejection
-    io.to(roomId).emit('newMessage', {
-      senderId: 'system',
-      content: `❌ Settlement rejected by user ${userId}`,
-      timestamp: new Date().toISOString(),
+    const message = await prisma.message.create({
+      data: {
+        roomId,
+        senderId: userId,
+        content: `Settlement rejected please pay again`,
+      },
+      include: {
+        sender: { select: { id: true, username: true, name: true } },
+      },
     });
+
+    // Emit the message to the room
+    io.to(roomId).emit("newMessage", message);
 
     res.json({ message: "Settlement rejected" });
   } catch (err) {

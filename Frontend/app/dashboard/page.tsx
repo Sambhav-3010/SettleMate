@@ -170,7 +170,7 @@ export default function DashboardPage() {
             <div className="flex items-end justify-between">
               <div>
                 <p className={`text-5xl font-bold mb-2 ${totalOwed - totalOwe >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  ${(totalOwed - totalOwe).toFixed(2)}
+                  ₹{(totalOwed - totalOwe).toFixed(2)}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {totalOwed - totalOwe >= 0 ? "You are owed in total" : "You owe in total"}
@@ -205,11 +205,11 @@ export default function DashboardPage() {
             <div className="space-y-6">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Are Owed</p>
-                <p className="text-3xl font-bold text-green-600">${totalOwed.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-green-600">₹{totalOwed.toFixed(2)}</p>
               </div>
               <div className="border-t border-border pt-4">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Owe</p>
-                <p className="text-3xl font-bold text-red-600">${totalOwe.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-red-600">₹{totalOwe.toFixed(2)}</p>
               </div>
             </div>
           </Card>

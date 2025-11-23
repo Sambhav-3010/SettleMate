@@ -274,7 +274,7 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
                     {payer === "paying" ? "You owe" : "You are owed"}
                   </p>
                   <p className={`text-3xl font-bold ${payer === "paying" ? "text-red-500" : "text-green-500"}`}>
-                    ${calculatedAmount.toFixed(2)}
+                    ₹{calculatedAmount.toFixed(2)}
                   </p>
                 </div>
               )}
@@ -282,7 +282,7 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Amount</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
                   <Input
                     type="number"
                     step="0.01"

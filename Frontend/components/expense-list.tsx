@@ -152,7 +152,7 @@ export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
                                         {/* Amount */}
                                         <div className="text-right shrink-0">
                                             <span className="block text-lg font-bold tracking-tight">
-                                                ${expense.amount.toFixed(2)}
+                                                ₹{expense.amount.toFixed(2)}
                                             </span>
                                         </div>
 
