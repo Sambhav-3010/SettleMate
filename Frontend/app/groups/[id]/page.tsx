@@ -11,6 +11,7 @@ import { ExpenseList } from "@/components/expense-list"
 import { Balances } from "@/components/balances"
 import { useState, useEffect } from "react"
 import axios from "axios"
+import { useAuthGuard } from "@/hooks/useAuthGuard"
 
 interface Member {
   user: {
@@ -22,6 +23,7 @@ interface Member {
 }
 
 export default function GroupPage() {
+  const { user, loading } = useAuthGuard()
   const params = useParams<{ id: string }>()
   const [groupName, setGroupName] = useState("Loading...")
   const [members, setMembers] = useState<Member[]>([])
@@ -30,16 +32,26 @@ export default function GroupPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
-    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${params.id}`, { withCredentials: true })
-      .then(res => {
-        setGroupName(res.data.name)
-        setMembers(res.data.members)
-      })
-      .catch(err => console.error("Failed to fetch room", err))
-  }, [params.id])
+    if (!loading) {
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${params.id}`, { withCredentials: true })
+        .then(res => {
+          setGroupName(res.data.name)
+          setMembers(res.data.members)
+        })
+        .catch(err => console.error("Failed to fetch room", err))
+    }
+  }, [loading, params.id])
 
   const handleExpenseAdded = () => {
     setRefreshTrigger(prev => prev + 1)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
   }
 
   return (

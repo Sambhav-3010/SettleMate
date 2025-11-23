@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
+import { useAuthGuard } from "@/hooks/useAuthGuard"
+import { Loader2 } from "lucide-react"
 
 interface ChatHistory {
   id: string
@@ -13,6 +15,7 @@ interface ChatHistory {
 }
 
 export default function ChatHistory() {
+  const { user, loading } = useAuthGuard()
   const chatHistory: ChatHistory[] = [
     {
       id: "1",
@@ -39,6 +42,14 @@ export default function ChatHistory() {
       unreadCount: 2,
     },
   ]
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">

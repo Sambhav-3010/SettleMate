@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
@@ -18,6 +19,7 @@ import axios from "axios"
 import { UserSearch } from "@/components/user-search"
 import { useState, useEffect } from "react"
 import { ChatModal } from "@/components/chat-modal"
+import { useAuthGuard } from "@/hooks/useAuthGuard"
 
 interface FriendBalance {
   id: string
@@ -26,6 +28,7 @@ interface FriendBalance {
 }
 
 export default function DashboardPage() {
+  const { user, loading } = useAuthGuard()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [groups, setGroups] = useState<any[]>([])
@@ -34,13 +37,36 @@ export default function DashboardPage() {
   const [activeChatRoomId, setActiveChatRoomId] = useState<string | null>(null)
   const [totalOwed, setTotalOwed] = useState(0)
   const [totalOwe, setTotalOwe] = useState(0)
-  const [friendBalances, setFriendBalances] = useState<FriendBalance[]>([])
   const { register, handleSubmit, reset } = useForm()
 
+  const router = useRouter()
+
   useEffect(() => {
-    fetchGroups()
-    fetchInvites()
-  }, [])
+    if (!loading) {
+      fetchGroups()
+      fetchInvites()
+      checkProfile()
+    }
+  }, [loading])
+
+  const checkProfile = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
+      if (!res.data.upiId) {
+        router.push("/onboarding")
+      }
+    } catch (err) {
+      console.error("Failed to check profile", err)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
+  }
 
   const openChat = (roomId: string) => {
     setActiveChatRoomId(roomId)
@@ -66,21 +92,6 @@ export default function DashboardPage() {
       try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/expenses/balances`, { withCredentials: true })
         const balances = res.data.balances
-
-        // Find current user's balance in this room (not directly provided by endpoint, need to infer or adjust endpoint)
-        // Actually the endpoint returns balances for all users. We need to find "my" net balance relative to others?
-        // Wait, the endpoint returns { userId, username, net }. 
-        // If I am User A, and net is +10, it means I am owed 10.
-        // But this is the net balance in the group. 
-
-        // Let's assume we can filter by "my" user ID, but we don't have it easily here without another call.
-        // Instead, let's look at all balances. 
-        // Actually, to show "Friend Balances", we need to know who owes whom. 
-        // The current `getBalances` endpoint returns net balances for everyone. 
-        // It doesn't explicitly say "Alice owes Bob". 
-        // However, for the "Overall Balance" and "You Owe/Owed", we can sum up the current user's net balance across groups.
-
-        // We need the current user's ID to find their balance.
         const meRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
         const myId = meRes.data.id
 
@@ -89,9 +100,6 @@ export default function DashboardPage() {
           if (myBalance.net > 0) owed += myBalance.net
           else if (myBalance.net < 0) owe += Math.abs(myBalance.net)
         }
-
-        // For friend balances, this is complex without a specific endpoint. 
-        // We'll skip detailed friend balances for now and just show the totals.
       } catch (err) {
         console.error(`Failed to fetch balances for room ${room.id}`, err)
       }

@@ -8,7 +8,7 @@ export async function googleAuth(req: Request, res: Response) {
     if (!user) {
       return res.status(401).json({ message: "User not found in session" });
     }
-    res.redirect(`${process.env.FRONTEND_URL as string}/dashboard`);
+    res.redirect(`${process.env.FRONTEND_URL as string}/onboarding`);
   } catch (err) {
     console.error("Google authentication failed:", err);
     res.status(500).json({ message: "Google authentication failed" });

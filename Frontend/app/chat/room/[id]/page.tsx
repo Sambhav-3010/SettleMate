@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { io, Socket } from "socket.io-client"
 import axios from "axios"
 import { useParams } from "next/navigation"
+import { useAuthGuard } from "@/hooks/useAuthGuard"
+import { Loader2 } from "lucide-react"
 
 interface Message {
   id: string
@@ -30,6 +32,7 @@ interface ChatRoomProps {
 }
 
 export default function ChatRoom() {
+  const { user, loading } = useAuthGuard()
   const params = useParams<{ id: string }>()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
@@ -41,40 +44,51 @@ export default function ChatRoom() {
   const roomId = params.id
 
   useEffect(() => {
-    // Fetch current user
-    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
-      .then(res => setCurrentUser(res.data))
-      .catch(err => console.error("Failed to fetch user", err))
+    if (!loading) {
+      // Fetch current user
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
+        .then(res => setCurrentUser(res.data))
+        .catch(err => console.error("Failed to fetch user", err))
 
-    // Fetch room details
-    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}`, { withCredentials: true })
-      .then(res => setRoom(res.data))
-      .catch(err => console.error("Failed to fetch room", err))
+      // Fetch room details
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}`, { withCredentials: true })
+        .then(res => setRoom(res.data))
+        .catch(err => console.error("Failed to fetch room", err))
 
-    // Fetch existing messages
-    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`, { withCredentials: true })
-      .then(res => setMessages(res.data))
-      .catch(err => console.error("Failed to fetch messages", err))
+      // Fetch existing messages
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`, { withCredentials: true })
+        .then(res => setMessages(res.data))
+        .catch(err => console.error("Failed to fetch messages", err))
 
-    // Initialize Socket.io
-    socketRef.current = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
-      withCredentials: true,
-    })
+      // Initialize Socket.io
+      const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
+        withCredentials: true,
+      })
+      socketRef.current = socket
 
-    socketRef.current.emit("joinRoom", roomId)
+      socket.emit("joinRoom", roomId)
 
-    socketRef.current.on("newMessage", (message: Message) => {
-      setMessages((prev) => [...prev, message])
-    })
+      socket.on("newMessage", (message: Message) => {
+        setMessages((prev) => [...prev, message])
+      })
 
-    return () => {
-      socketRef.current?.disconnect()
+      return () => {
+        socket.disconnect()
+      }
     }
-  }, [roomId])
+  }, [loading, roomId])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return
@@ -114,8 +128,8 @@ export default function ChatRoom() {
                 <div key={message.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-xs px-4 py-3 rounded-lg ${isMe
-                        ? "bg-primary text-primary-foreground rounded-br-none"
-                        : "bg-secondary text-foreground rounded-bl-none border border-border"
+                      ? "bg-primary text-primary-foreground rounded-br-none"
+                      : "bg-secondary text-foreground rounded-bl-none border border-border"
                       }`}
                   >
                     {!isMe && <p className="text-xs font-bold mb-1">{message.sender.username}</p>}

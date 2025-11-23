@@ -8,8 +8,11 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useForm, Controller } from "react-hook-form"
+import { useAuthGuard } from "@/hooks/useAuthGuard"
+import { Loader2 } from "lucide-react"
 
 export default function AddExpensePage() {
+  const { user, loading } = useAuthGuard()
   const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm()
 
   const [tab, setTab] = useState("individual")
@@ -17,6 +20,14 @@ export default function AddExpensePage() {
   const onSubmit = (data: any) => {
     console.log("Expense Submitted:", data)
     reset()
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (

@@ -95,6 +95,11 @@ function ThemeProvider({
                   <DropdownMenuItem disabled className="opacity-70">
                     {user.username}
                   </DropdownMenuItem>
+                  <Link href="/settings">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <UserIcon className="mr-2 w-4 h-4" /> Settings
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={logout}>
                     <LogOut className="mr-2 w-4 h-4" /> Logout
                   </DropdownMenuItem>

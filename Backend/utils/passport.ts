@@ -35,7 +35,7 @@ passport.use(
               email,
               username: email.split("@")[0],
               password: hashedPassword,
-              upiId: "not_set",
+              upiId: null,
               accessToken,
               refreshToken,
             },

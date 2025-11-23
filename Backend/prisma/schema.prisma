@@ -14,7 +14,7 @@ model User {
   name            String
   email           String       @unique
   password        String
-  upiId           String
+  upiId           String?
   accessToken     String?
   refreshToken    String?
   createdAt       DateTime     @default(now())

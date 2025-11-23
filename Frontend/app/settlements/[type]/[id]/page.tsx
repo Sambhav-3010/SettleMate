@@ -11,6 +11,7 @@ import axios from "axios"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Check, Wallet } from "lucide-react"
 import { io } from "socket.io-client"
+import { useAuthGuard } from "@/hooks/useAuthGuard"
 
 interface Member {
   user: {
@@ -28,57 +29,63 @@ interface Expense {
 }
 
 export default function SettlePage({ params }: { params: Promise<{ type: string; id: string }> }) {
+  const { user: authUser, loading } = useAuthGuard()
   const { type, id } = use(params)
   const { register, handleSubmit, setValue, watch } = useForm()
   const [payer, setPayer] = useState<"paying" | "receiving">("paying")
   const [members, setMembers] = useState<Member[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("")
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [calculatedAmount, setCalculatedAmount] = useState<number>(0)
-  const [socket, setSocket] = useState<any>(null)
   const router = useRouter()
+  const [socket, setSocket] = useState<any>(null)
 
   const isGroup = type === "group"
 
   useEffect(() => {
-    const newSocket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
-      withCredentials: true,
-    })
-    setSocket(newSocket)
+    if (!loading) {
+      const newSocket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
+        withCredentials: true,
+      })
+      setSocket(newSocket)
 
-    return () => {
-      newSocket.disconnect()
-    }
-  }, [])
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
+        .then(res => setCurrentUser(res.data))
+        .catch(err => console.error("Failed to fetch current user", err))
 
-  useEffect(() => {
-    fetchCurrentUser()
-    if (isGroup) {
-      fetchGroupData()
-    }
-  }, [id, isGroup])
+      const endpoint = isGroup
+        ? `${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/users/${id}`
 
-  const fetchCurrentUser = async () => {
-    try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
-      setCurrentUser(res.data)
-    } catch (err) {
-      console.error("Failed to fetch current user", err)
-    }
-  }
+      axios.get(endpoint, { withCredentials: true })
+        .then(res => {
+          if (isGroup) {
+            setMembers(res.data.members)
+          } else {
+            setMembers([{ user: res.data }])
+          }
+        })
+        .catch(err => console.error("Failed to fetch data", err))
 
-  const fetchGroupData = async () => {
-    try {
-      const [roomRes, expensesRes] = await Promise.all([
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}`, { withCredentials: true }),
+      if (isGroup) {
         axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/expenses`, { withCredentials: true })
-      ])
-      setMembers(roomRes.data.members)
-      setExpenses(expensesRes.data.expenses)
-    } catch (err) {
-      console.error("Failed to fetch group data", err)
+          .then(res => setExpenses(res.data.expenses))
+          .catch(err => console.error("Failed to fetch expenses", err))
+      }
+
+      return () => {
+        newSocket.disconnect()
+      }
     }
+  }, [loading, id, isGroup])
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
   }
 
   const calculatePairwiseDebt = (otherUserId: string) => {

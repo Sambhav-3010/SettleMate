@@ -180,3 +180,42 @@ export async function respondToUserInvite(req: Request, res: Response) {
     res.status(500).json({ message: "Failed to respond to invite" });
   }
 }
+
+export async function updateProfile(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    const { username, upiId } = req.body;
+
+    // Validation
+    if (username && typeof username !== "string") return res.status(400).json({ message: "Invalid username" });
+    if (upiId && typeof upiId !== "string") return res.status(400).json({ message: "Invalid UPI ID" });
+
+    // Check if username is taken (if changing)
+    if (username) {
+      const existing = await prisma.user.findUnique({ where: { username } });
+      if (existing && existing.id !== userId) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(username && { username }),
+        ...(upiId && { upiId }),
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        upiId: true,
+      },
+    });
+
+    res.json(updatedUser);
+  } catch (err) {
+    console.error("updateProfile error:", err);
+    res.status(500).json({ message: "Failed to update profile" });
+  }
+}

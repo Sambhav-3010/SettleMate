@@ -3,6 +3,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAuthGuard } from "@/hooks/useAuthGuard"
+import { Loader2 } from "lucide-react"
 
 const mockExpenses = [
   { id: "1", description: "Dinner", amount: 45.5, paidBy: "You", date: "2024-01-15" },
@@ -13,9 +15,18 @@ const mockExpenses = [
 const mockSettlements = [{ id: "1", amount: 50, type: "payment", date: "2024-01-12" }]
 
 export default function PersonPage({ params }: { params: { id: string } }) {
+  const { user, loading } = useAuthGuard()
   const personName = "Jack Smith"
   const personEmail = "jack@example.com"
   const balance = 100
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
