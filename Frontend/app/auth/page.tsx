@@ -17,12 +17,12 @@ export default function AuthPage() {
       <Card className="w-full max-w-md p-8 border border-border text-center">
         <h1 className="text-3xl font-bold mb-4">Welcome</h1>
         <p className="text-muted-foreground mb-8">
-          Sign in to continue to Splitwise
+          Sign in to continue to SettleMate
         </p>
 
-        <Button 
-          variant="outline" 
-          className="w-full py-6 text-lg font-medium flex items-center justify-center gap-3" 
+        <Button
+          variant="outline"
+          className="w-full py-6 text-lg font-medium flex items-center justify-center gap-3"
           onClick={handleGoogleSignIn}
           disabled={isLoading}
         >

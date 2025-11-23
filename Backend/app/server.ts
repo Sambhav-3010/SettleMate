@@ -67,7 +67,7 @@ app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/users", userRoutes);
 
-app.get("/", (_, res) => res.send("Splitwise backend running"));
+app.get("/", (_, res) => res.send("SettleMate backend running"));
 
 const io = new Server(server, {
   cors: {
