@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../utils/prisma.js";
+import { io } from "../app/server.js";
 
 function getUserId(req: Request) {
   return (req.user as any).id as string;
@@ -230,5 +231,59 @@ export async function confirmSettlement(req: Request, res: Response) {
   } catch (err) {
     console.error("confirmSettlement error:", err);
     res.status(500).json({ message: "Failed to confirm settlement" });
+  }
+}
+
+export async function rejectSettlement(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    const { roomId, expenseId } = req.params;
+
+    const member = await prisma.roomMember.findUnique({
+      where: { roomId_userId: { roomId, userId } },
+    });
+    if (!member) return res.status(403).json({ message: "Not a member" });
+
+    const expense = await prisma.expense.findUnique({
+      where: { id: expenseId },
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    if (expense.roomId !== roomId) {
+      return res.status(400).json({ message: "Expense does not belong to this room" });
+    }
+
+    if (!expense.isSettlement) {
+      return res.status(400).json({ message: "This is not a settlement expense" });
+    }
+
+    if (expense.confirmed) {
+      return res.status(400).json({ message: "Settlement already confirmed" });
+    }
+
+    // Verify the current user is the receiver
+    if (expense.receiverId !== userId) {
+      return res.status(403).json({ message: "Only the receiver can reject this settlement" });
+    }
+
+    // Delete the expense
+    await prisma.expense.delete({
+      where: { id: expenseId },
+    });
+
+    // Emit a system message to the room indicating settlement rejection
+    io.to(roomId).emit('newMessage', {
+      senderId: 'system',
+      content: `❌ Settlement rejected by user ${userId}`,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.json({ message: "Settlement rejected" });
+  } catch (err) {
+    console.error("rejectSettlement error:", err);
+    res.status(500).json({ message: "Failed to reject settlement" });
   }
 }

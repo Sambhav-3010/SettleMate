@@ -77,11 +77,8 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
   socket.on("joinRoom", (roomId: string) => {
     socket.join(roomId);
-    console.log(`User ${socket.id} joined room ${roomId}`);
   });
 
   socket.on("sendMessage", (data) => {
@@ -100,7 +97,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
   });
 });
 

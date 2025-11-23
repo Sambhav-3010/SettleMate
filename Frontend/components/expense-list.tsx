@@ -64,6 +64,22 @@ export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
         }
     }
 
+    const handleRejectSettlement = async (expenseId: string) => {
+        if (!confirm("Are you sure you want to reject this settlement? It will be removed.")) return
+
+        try {
+            await axios.delete(
+                `${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/expenses/${expenseId}/reject`,
+                { withCredentials: true }
+            )
+            // Refresh the expenses list
+            fetchExpenses()
+        } catch (err) {
+            console.error("Failed to reject settlement", err)
+            alert("Failed to reject settlement. Please try again.")
+        }
+    }
+
     // Group expenses by month
     const groupedExpenses = expenses.reduce((groups, expense) => {
         const date = new Date(expense.createdAt)
@@ -142,13 +158,21 @@ export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
 
                                         {/* Confirmation Button for Settlements */}
                                         {expense.isSettlement && !expense.confirmed && expense.receiverId === user?.id && (
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleConfirmSettlement(expense.id)}
-                                                className="shrink-0"
-                                            >
-                                                Confirm Payment
-                                            </Button>
+                                            <div className="flex gap-2 shrink-0">
+                                                <Button
+                                                    size="sm"
+                                                    variant="destructive"
+                                                    onClick={() => handleRejectSettlement(expense.id)}
+                                                >
+                                                    Reject
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleConfirmSettlement(expense.id)}
+                                                >
+                                                    Confirm Payment
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
                                 </Card>

@@ -9,7 +9,7 @@ function getUserId(req: Request) {
 export async function createRoom(req: Request, res: Response) {
   try {
     const ownerId = getUserId(req);
-    console.log(req.body);
+
     const { name, members } = req.body; // members is array of userIds
     if (!name) return res.status(400).json({ message: "name is required" });
 
