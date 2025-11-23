@@ -9,9 +9,12 @@ import { ChatModal } from "@/components/chat-modal"
 import { AddExpenseModal } from "@/components/add-expense-modal"
 import { ExpenseList } from "@/components/expense-list"
 import { Balances } from "@/components/balances"
+import { EditGroupModal } from "@/components/edit-group-modal"
+import { AddMemberModal } from "@/components/add-member-modal"
 import { useState, useEffect } from "react"
 import axios from "axios"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
+import { Settings, UserPlus, Edit } from "lucide-react"
 
 interface Member {
   user: {
@@ -26,21 +29,29 @@ export default function GroupPage() {
   const { user, loading } = useAuthGuard()
   const params = useParams<{ id: string }>()
   const [groupName, setGroupName] = useState("Loading...")
+  const [groupDescription, setGroupDescription] = useState("")
   const [members, setMembers] = useState<Member[]>([])
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
+  const [isEditGroupOpen, setIsEditGroupOpen] = useState(false)
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
     if (!loading) {
-      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${params.id}`, { withCredentials: true })
-        .then(res => {
-          setGroupName(res.data.name)
-          setMembers(res.data.members)
-        })
-        .catch(err => console.error("Failed to fetch room", err))
+      fetchGroupData()
     }
-  }, [loading, params.id])
+  }, [loading, params.id, refreshTrigger])
+
+  const fetchGroupData = () => {
+    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${params.id}`, { withCredentials: true })
+      .then(res => {
+        setGroupName(res.data.name)
+        setGroupDescription(res.data.description || "")
+        setMembers(res.data.members)
+      })
+      .catch(err => console.error("Failed to fetch room", err))
+  }
 
   const handleExpenseAdded = () => {
     setRefreshTrigger(prev => prev + 1)
@@ -117,8 +128,43 @@ export default function GroupPage() {
 
           <TabsContent value="settings" className="mt-6">
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Group Settings</h3>
-              <p className="text-muted-foreground">Group settings content will go here.</p>
+              <h3 className="text-lg font-semibold mb-6">Group Settings</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Group Name</h4>
+                    <p className="text-sm text-muted-foreground">{groupName}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setIsEditGroupOpen(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Description</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {groupDescription || "No description set"}
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setIsEditGroupOpen(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Members</h4>
+                    <p className="text-sm text-muted-foreground">{members.length} members in this group</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setIsAddMemberOpen(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add Members
+                  </Button>
+                </div>
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
@@ -135,6 +181,22 @@ export default function GroupPage() {
         onOpenChange={setIsAddExpenseOpen}
         roomId={params.id}
         onSuccess={handleExpenseAdded}
+      />
+
+      <EditGroupModal
+        isOpen={isEditGroupOpen}
+        onClose={() => setIsEditGroupOpen(false)}
+        roomId={params.id}
+        currentName={groupName}
+        currentDescription={groupDescription}
+        onSuccess={fetchGroupData}
+      />
+
+      <AddMemberModal
+        isOpen={isAddMemberOpen}
+        onClose={() => setIsAddMemberOpen(false)}
+        roomId={params.id}
+        onSuccess={fetchGroupData}
       />
     </main>
   )

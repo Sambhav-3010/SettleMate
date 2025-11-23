@@ -9,7 +9,9 @@ import {
   postMessage,
   getMessages,
   getRoomDetails,
-  listRoomsForUser
+  listRoomsForUser,
+  updateRoom,
+  addMemberToRoom
 } from "../controllers/roomController.js";
 import expenseRoutes from "./expenseRoutes.js";
 
@@ -18,8 +20,10 @@ const router = express.Router();
 router.post("/", isAuthenticated, createRoom);
 router.get("/", isAuthenticated, listRoomsForUser);
 router.get("/:roomId", isAuthenticated, getRoomDetails);
+router.put("/:roomId", isAuthenticated, updateRoom);
 
 router.post("/:roomId/add-by-username", isAuthenticated, addMemberByUsername);
+router.post("/:roomId/members", isAuthenticated, addMemberToRoom);
 router.post("/:roomId/request-join", isAuthenticated, sendJoinRequest);
 router.get("/:roomId/invites", isAuthenticated, listPendingInvites);
 router.post("/:roomId/invites/:inviteId/respond", isAuthenticated, respondToInvite);

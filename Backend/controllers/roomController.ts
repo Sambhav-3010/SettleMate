@@ -250,3 +250,95 @@ export async function getMessages(req: Request, res: Response) {
     res.status(500).json({ message: "Could not get messages" });
   }
 }
+
+export async function updateRoom(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    const { roomId } = req.params;
+    const { name, description } = req.body;
+
+    // Check if user is owner or member
+    const membership = await prisma.roomMember.findFirst({
+      where: { roomId, userId },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ message: "Not a member of this room" });
+    }
+
+    // Only owner can update room details
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
+    if (room?.ownerId !== userId) {
+      return res.status(403).json({ message: "Only owner can update room details" });
+    }
+
+    const updatedRoom = await prisma.room.update({
+      where: { id: roomId },
+      data: {
+        ...(name && { name }),
+        ...(description && { description }),
+      },
+      include: {
+        members: {
+          include: { user: { select: { id: true, username: true, name: true } } },
+        },
+      },
+    });
+
+    res.json(updatedRoom);
+  } catch (err) {
+    console.error("updateRoom error:", err);
+    res.status(500).json({ message: "Failed to update room" });
+  }
+}
+
+export async function addMemberToRoom(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    const { roomId } = req.params;
+    const { userIds } = req.body; // Array of user IDs to add
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ message: "userIds array is required" });
+    }
+
+    // Check if requester is a member
+    const membership = await prisma.roomMember.findFirst({
+      where: { roomId, userId },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ message: "Not a member of this room" });
+    }
+
+    // Create invites for the new users
+    const inviteData = userIds.map((toUserId: string) => ({
+      roomId,
+      fromUserId: userId,
+      toUserId,
+      status: "PENDING" as const,
+    }));
+
+    await prisma.invite.createMany({
+      data: inviteData,
+      skipDuplicates: true,
+    });
+
+    // Fetch created invites to return
+    const invites = await prisma.invite.findMany({
+      where: {
+        roomId,
+        fromUserId: userId,
+        toUserId: { in: userIds },
+      },
+      include: {
+        toUser: { select: { id: true, username: true, name: true } },
+      },
+    });
+
+    res.json({ message: "Invites sent successfully", invites });
+  } catch (err) {
+    console.error("addMemberToRoom error:", err);
+    res.status(500).json({ message: "Failed to add members" });
+  }
+}
