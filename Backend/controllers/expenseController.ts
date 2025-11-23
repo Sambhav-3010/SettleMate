@@ -58,12 +58,24 @@ export async function createExpense(req: Request, res: Response) {
     }
 
     const result = await prisma.$transaction(async (tx: any) => {
+      // Check if this is a settlement
+      const isSettlement = description?.includes("Settlement") || false;
+      let receiverId = null;
+
+      // For settlements, the receiver is the person in the splits (should be only one)
+      if (isSettlement && splitsToCreate.length === 1) {
+        receiverId = splitsToCreate[0].userId;
+      }
+
       const exp = await tx.expense.create({
         data: {
           roomId,
           payerId,
           amount: amount,
           description: description ?? null,
+          isSettlement,
+          confirmed: false,
+          receiverId,
         },
       });
 
@@ -160,6 +172,63 @@ export async function getBalances(req: Request, res: Response) {
     res.json({ balances });
   } catch (err) {
     console.error("getBalances error:", err);
-    res.status(500).json({ message: "Failed to compute balances" });
+  }
+}
+
+export async function confirmSettlement(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    const { roomId, expenseId } = req.params;
+
+    // Verify user is a member of the room
+    const member = await prisma.roomMember.findUnique({
+      where: { roomId_userId: { roomId, userId } },
+    });
+    if (!member) return res.status(403).json({ message: "Not a member" });
+
+    // Find the expense
+    const expense = await prisma.expense.findUnique({
+      where: { id: expenseId },
+      include: {
+        payer: { select: { id: true, username: true, name: true } },
+        splits: { include: { user: { select: { id: true, username: true, name: true } } } },
+      },
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    if (expense.roomId !== roomId) {
+      return res.status(400).json({ message: "Expense does not belong to this room" });
+    }
+
+    if (!expense.isSettlement) {
+      return res.status(400).json({ message: "This is not a settlement expense" });
+    }
+
+    if (expense.confirmed) {
+      return res.status(400).json({ message: "Settlement already confirmed" });
+    }
+
+    // Verify the current user is the receiver
+    if (expense.receiverId !== userId) {
+      return res.status(403).json({ message: "Only the receiver can confirm this settlement" });
+    }
+
+    // Update the expense to mark it as confirmed
+    const updatedExpense = await prisma.expense.update({
+      where: { id: expenseId },
+      data: { confirmed: true },
+      include: {
+        payer: { select: { id: true, username: true, name: true } },
+        splits: { include: { user: { select: { id: true, username: true, name: true } } } },
+      },
+    });
+
+    res.json({ message: "Settlement confirmed", expense: updatedExpense });
+  } catch (err) {
+    console.error("confirmSettlement error:", err);
+    res.status(500).json({ message: "Failed to confirm settlement" });
   }
 }

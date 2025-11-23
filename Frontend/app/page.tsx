@@ -9,7 +9,8 @@ import { useRouter } from 'next/navigation'
 import { Users, TrendingUp, Bell, Plus, DollarSign, CheckCircle } from "lucide-react"
 
 const checkDarkMode = () => {
-  return document.documentElement.classList.contains("dark");
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem("dark") === "true";
 };
 
 export default function LandingPage() {
@@ -23,12 +24,6 @@ export default function LandingPage() {
   }
 
   const { user } = useAuth()
-
-  useEffect(() => {
-    if (user) {
-      router.push("/dashboard")
-    }
-  }, [user])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {

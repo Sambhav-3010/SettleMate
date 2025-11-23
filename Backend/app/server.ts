@@ -35,7 +35,7 @@ pool.on("error", (err) => {
 app.use(
   cors({
     origin: [process.env.FRONTEND_URL as string],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
 );

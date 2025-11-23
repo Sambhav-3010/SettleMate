@@ -92,6 +92,9 @@ model Expense {
   payerId     String
   amount      Float
   description String?
+  isSettlement Boolean @default(false)
+  confirmed    Boolean @default(false)
+  receiverId   String?
   createdAt   DateTime @default(now())
 
   room   Room    @relation(fields: [roomId], references: [id])

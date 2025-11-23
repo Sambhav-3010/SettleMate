@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/authContext"
 import axios from "axios"
-import { Receipt, Calendar } from "lucide-react"
+import { Receipt, Calendar, CheckCircle } from "lucide-react"
 import { format } from "date-fns"
 
 interface Expense {
@@ -11,6 +13,9 @@ interface Expense {
     amount: number
     description: string
     createdAt: string
+    isSettlement: boolean
+    confirmed: boolean
+    receiverId: string | null
     payer: {
         id: string
         username: string
@@ -24,6 +29,7 @@ interface ExpenseListProps {
 }
 
 export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
+    const { user } = useAuth()
     const [expenses, setExpenses] = useState<Expense[]>([])
 
     useEffect(() => {
@@ -40,6 +46,21 @@ export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
             setExpenses(res.data.expenses)
         } catch (err) {
             console.error("Failed to fetch expenses", err)
+        }
+    }
+
+    const handleConfirmSettlement = async (expenseId: string) => {
+        try {
+            await axios.patch(
+                `${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/expenses/${expenseId}/confirm`,
+                {},
+                { withCredentials: true }
+            )
+            // Refresh the expenses list
+            fetchExpenses()
+        } catch (err) {
+            console.error("Failed to confirm settlement", err)
+            alert("Failed to confirm settlement. Please try again.")
         }
     }
 
@@ -74,7 +95,7 @@ export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
                         {monthExpenses.map((expense) => {
                             const date = new Date(expense.createdAt)
                             return (
-                                <Card key={expense.id} className="group hover:border-primary/50 transition-all duration-200 cursor-pointer overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+                                <Card key={expense.id} className="group hover:border-primary/50 transition-all duration-200 overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
                                     <div className="flex items-center p-4 gap-4">
                                         {/* Date Box */}
                                         <div className="flex flex-col items-center justify-center w-12 h-14 bg-secondary/50 rounded-md border border-border/50 shrink-0">
@@ -93,9 +114,17 @@ export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
 
                                         {/* Details */}
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-semibold text-base truncate pr-2">
-                                                {expense.description || "Untitled Expense"}
-                                            </h4>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="font-semibold text-base truncate">
+                                                    {expense.description || "Untitled Expense"}
+                                                </h4>
+                                                {expense.isSettlement && expense.confirmed && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-xs font-medium shrink-0">
+                                                        <CheckCircle className="w-3 h-3" />
+                                                        Confirmed
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <span className="font-medium text-foreground/80">
                                                     {expense.payer.name || expense.payer.username}
@@ -110,6 +139,17 @@ export function ExpenseList({ roomId, refreshTrigger }: ExpenseListProps) {
                                                 ${expense.amount.toFixed(2)}
                                             </span>
                                         </div>
+
+                                        {/* Confirmation Button for Settlements */}
+                                        {expense.isSettlement && !expense.confirmed && expense.receiverId === user?.id && (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => handleConfirmSettlement(expense.id)}
+                                                className="shrink-0"
+                                            >
+                                                Confirm Payment
+                                            </Button>
+                                        )}
                                     </div>
                                 </Card>
                             )
