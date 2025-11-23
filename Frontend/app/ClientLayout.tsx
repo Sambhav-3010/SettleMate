@@ -76,7 +76,7 @@ function ThemeProvider({
             href="/"
             className="text-2xl font-bold text-primary hover:opacity-85 transition flex items-center space-x-2"
           >
-            <span>Splitter</span>
+            <span>SettleMate</span>
           </Link>
 
           <div className="flex items-center space-x-3">

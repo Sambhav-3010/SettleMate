@@ -1,8 +1,14 @@
 version: '3.8'
+
 services:
   backend:
+    container_name: SettleMate-backend
     build: .
     ports:
       - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
     env_file:
-      - ./.env
+      - .env
+    restart: always

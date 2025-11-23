@@ -90,7 +90,7 @@ export default function OnboardingPage() {
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
             <Card className="w-full max-w-md border-border bg-card/50 backdrop-blur-sm">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Welcome to Splitter</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Welcome to SettleMate</CardTitle>
                     <CardDescription>
                         Please set your username and UPI ID to continue.
                     </CardDescription>

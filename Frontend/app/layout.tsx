@@ -1,11 +1,13 @@
 import type React from "react"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Poppins } from "next/font/google"
 import "./globals.css"
 import ClientLayout from "./ClientLayout"
 import { AuthProvider } from "../contexts/authContext"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const _poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+})
 
 export default function RootLayout({
   children,
@@ -14,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
+      <body className={`font-sans antialiased ${_poppins.className}`}>
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
@@ -24,5 +26,10 @@ export default function RootLayout({
 }
 
 export const metadata = {
-  generator: 'v0.app'
+  title: "SettleMate",
+  description: "Split expenses with friends",
+  generator: 'v0.app',
+  icons: {
+    icon: '/favicon.png',
+  },
 };

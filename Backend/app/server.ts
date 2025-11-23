@@ -8,34 +8,36 @@ import session from "express-session";
 import passport from "passport";
 import pgSession from "connect-pg-simple";
 import { Pool } from "pg";
-
 import authRoutes from "../routes/authRoute.js";
 import roomRoutes from "../routes/roomRoutes.js";
 import userRoutes from "../routes/userRoutes.js";
+
 import "../utils/passport.js";
 
 dotenv.config();
 
 const app = express();
+
+app.set("trust proxy", 1);
+
 const server = http.createServer(app);
 const pgStore = pgSession(session);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  ssl: { rejectUnauthorized: false }
 });
 
 pool.on("error", (err) => {
   console.error("Unexpected error on idle client", err);
-  process.exit(-1);
 });
+
+app.use(express.json());
+app.use(cookieParser());
 
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL as string],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   })
 );
@@ -52,14 +54,13 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     },
   })
 );
 
-app.use(express.json());
-app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -67,7 +68,7 @@ app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/users", userRoutes);
 
-app.get("/", (_, res) => res.send("Splitwise backend running"));
+app.get("/", (_, res) => res.send("SettleMate backend running"));
 
 const io = new Server(server, {
   cors: {
@@ -77,37 +78,30 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  socket.on("joinRoom", (roomId: string) => {
-    socket.join(roomId);
-  });
+  socket.on("joinRoom", (roomId: string) => socket.join(roomId));
 
-  socket.on("sendMessage", (data) => {
-    const { roomId, message } = data;
+  socket.on("sendMessage", ({ roomId, message }) => {
     io.to(roomId).emit("newMessage", message);
   });
 
-  socket.on("sendInvite", (data) => {
-    const { roomId, invite } = data;
+  socket.on("sendInvite", ({ roomId, invite }) => {
     io.to(roomId).emit("newInvite", invite);
   });
 
-  socket.on("newExpense", (data) => {
-    const { roomId, expense } = data;
+  socket.on("newExpense", ({ roomId, expense }) => {
     io.to(roomId).emit("expenseAdded", expense);
-  });
-
-  socket.on("disconnect", () => {
   });
 });
 
 const PORT = Number(process.env.PORT) || 5000;
 
-server.listen(PORT, async () => {
-  try {
-    console.log(`Server listening on http://localhost:${PORT}`);
-  } catch (err) {
-    console.error("Startup error:", err);
-  }
+server.listen(PORT, () => {
+  console.log(
+    `Server running at ${process.env.NODE_ENV === "production"
+      ? `https://settlemate.sambhav-mani-tripathi.dev`
+      : `http://localhost:${PORT}`
+    }`
+  );
 });
 
 export { io };
