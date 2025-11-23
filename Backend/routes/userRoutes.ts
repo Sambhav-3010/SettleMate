@@ -1,17 +1,25 @@
 import express from "express";
 import { isAuthenticated } from "../middlewares/isAuthenticated.js";
-import { getProfile, getUserRooms, getUserExpenses, searchUsers, getUserInvites, respondToUserInvite, updateProfile } from "../controllers/userController.js";
+import {
+    getProfile,
+    getUserById,
+    getUserRooms,
+    getUserExpenses,
+    getUserInvites,
+    respondToUserInvite,
+    searchUsers,
+    updateProfile
+} from "../controllers/userController.js";
 
 const router = express.Router();
 
-router.use(isAuthenticated);
-
-router.get("/me", getProfile);
-router.put("/me", updateProfile);
-router.get("/me/rooms", getUserRooms);
-router.get("/me/expenses", getUserExpenses);
-router.get("/search", searchUsers);
-router.get("/me/invites", getUserInvites);
-router.post("/me/invites/:inviteId/respond", respondToUserInvite);
+router.get("/me", isAuthenticated, getProfile);
+router.put("/me", isAuthenticated, updateProfile);
+router.get("/me/rooms", isAuthenticated, getUserRooms);
+router.get("/me/expenses", isAuthenticated, getUserExpenses);
+router.get("/me/invites", isAuthenticated, getUserInvites);
+router.post("/me/invites/:inviteId/respond", isAuthenticated, respondToUserInvite);
+router.get("/search", isAuthenticated, searchUsers);
+router.get("/:userId", isAuthenticated, getUserById);
 
 export default router;

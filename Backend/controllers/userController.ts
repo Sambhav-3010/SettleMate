@@ -30,6 +30,31 @@ export async function getProfile(req: Request, res: Response) {
   }
 }
 
+export async function getUserById(req: Request, res: Response) {
+  try {
+    const { userId } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        upiId: true,
+      },
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    console.error("getUserById error:", err);
+    res.status(500).json({ message: "Failed to fetch user" });
+  }
+}
+
+
 // 2. Get all rooms user is part of
 export async function getUserRooms(req: Request, res: Response) {
   try {

@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Check, Wallet } from "lucide-react"
 import { io } from "socket.io-client"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
+import { QRPaymentModal } from "@/components/qr-payment-modal"
 
 interface Member {
   user: {
@@ -40,6 +41,8 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
   const [calculatedAmount, setCalculatedAmount] = useState<number>(0)
   const router = useRouter()
   const [socket, setSocket] = useState<any>(null)
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false)
+  const [receiverInfo, setReceiverInfo] = useState<{ name: string; upiId: string } | null>(null)
 
   const isGroup = type === "group"
 
@@ -143,20 +146,50 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
   const onSubmit = async (data: any) => {
     if (!selectedMemberId || !data.amount || parseFloat(data.amount) === 0) return
 
-    try {
-      const amount = parseFloat(data.amount)
+    const amount = parseFloat(data.amount)
 
-      // We only allow recording if "I'm Paying" because backend restricts payer to logged-in user.
-      if (payer === "receiving") {
-        alert("You can only record payments you make. Please ask the other person to record this payment.")
+    // We only allow recording if "I'm Paying" because backend restricts payer to logged-in user.
+    if (payer === "receiving") {
+      alert("You can only record payments you make. Please ask the other person to record this payment.")
+      return
+    }
+
+    // Get receiver info and show QR modal
+    const selectedMember = members.find(m => m.user.id === selectedMemberId)
+    if (!selectedMember) return
+
+    // Fetch receiver's UPI ID
+    try {
+      const userRes = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${selectedMemberId}`,
+        { withCredentials: true }
+      )
+
+      if (!userRes.data.upiId) {
+        alert("The receiver hasn't set up their UPI ID yet. Please ask them to update their profile.")
         return
       }
 
+      setReceiverInfo({
+        name: selectedMember.user.name || selectedMember.user.username,
+        upiId: userRes.data.upiId
+      })
+      setIsQRModalOpen(true)
+    } catch (error) {
+      console.error("Failed to fetch receiver info:", error)
+      alert("Failed to load payment details. Please try again.")
+    }
+  }
+
+  const handlePaymentConfirmed = async () => {
+    if (!selectedMemberId || !calculatedAmount) return
+
+    try {
       const payload = {
-        amount: amount,
-        description: "Settlement",
+        amount: calculatedAmount,
+        description: "Settlement (Payment Claimed)",
         splits: [
-          { userId: selectedMemberId, amount: amount }
+          { userId: selectedMemberId, amount: calculatedAmount }
         ]
       }
 
@@ -167,7 +200,7 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
       // Send notification via chat
       if (socket) {
         const selectedMember = members.find(m => m.user.id === selectedMemberId)
-        const message = `💸 Settled up $${amount} with ${selectedMember?.user.name || "user"}. Have you received it?`
+        const message = `💸 ${currentUser?.name || "Someone"} claims to have paid you ₹${calculatedAmount}. Please confirm if you received the payment.`
 
         socket.emit("sendMessage", {
           roomId: id,
@@ -178,15 +211,18 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
           }
         })
 
-        // Also persist message to DB
-        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/messages`, {
-          content: message
-        }, { withCredentials: true })
+        // Also persist to database
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/messages`,
+          { content: message },
+          { withCredentials: true }
+        )
       }
-
+      setIsQRModalOpen(false)
       router.push(`/groups/${id}`)
-    } catch (err) {
-      console.error("Failed to record settlement", err)
+    } catch (error) {
+      console.error("Failed to record settlement:", error)
+      alert("Failed to record settlement. Please try again.")
     }
   }
 
@@ -277,6 +313,17 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
           </CardContent>
         </Card>
       </div>
+
+      {receiverInfo && (
+        <QRPaymentModal
+          isOpen={isQRModalOpen}
+          onClose={() => setIsQRModalOpen(false)}
+          amount={calculatedAmount}
+          receiverName={receiverInfo.name}
+          receiverUpiId={receiverInfo.upiId}
+          onPaymentConfirmed={handlePaymentConfirmed}
+        />
+      )}
     </main>
   )
 }
