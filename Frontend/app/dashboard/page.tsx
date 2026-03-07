@@ -124,8 +124,9 @@ export default function DashboardPage() {
       if (action === "ACCEPT") {
         fetchGroups()
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to ${action} invite:`, error)
+      alert(`Failed to ${action.toLowerCase()} invite: ${error.response?.data?.message || error.message}`)
     }
   }
 
@@ -148,35 +149,35 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12">
         {/* Header with CTA */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-12">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">Dashboard</h1>
-            <p className="text-muted-foreground">Manage your shared expenses efficiently</p>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2">Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Manage your shared expenses efficiently</p>
           </div>
           <Link href="/expenses/new">
-            <Button size="lg" className="font-semibold">
+            <Button size="lg" className="font-semibold w-full sm:w-auto">
               Add Expense
             </Button>
           </Link>
         </div>
 
         {/* Bento Grid - Row 1: Balance Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 sm:mb-6">
           {/* Total Balance Card - Large */}
-          <Card className="md:col-span-2 p-8 border border-border bg-card hover:border-foreground/20 transition-all duration-300">
-            <p className="text-muted-foreground text-sm font-medium mb-4">Overall Balance</p>
-            <div className="flex items-end justify-between">
+          <Card className="md:col-span-2 p-4 sm:p-6 md:p-8 border border-border bg-card hover:border-foreground/20 transition-all duration-300">
+            <p className="text-muted-foreground text-xs sm:text-sm font-medium mb-3 sm:mb-4">Overall Balance</p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
               <div>
-                <p className={`text-5xl font-bold mb-2 ${totalOwed - totalOwe >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <p className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 ${totalOwed - totalOwe >= 0 ? "text-green-600" : "text-red-600"}`}>
                   ₹{(totalOwed - totalOwe).toFixed(2)}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {totalOwed - totalOwe >= 0 ? "You are owed in total" : "You owe in total"}
                 </p>
               </div>
-              <div className="text-right">
+              <div className="text-right hidden sm:block">
                 <div className="inline-block bg-secondary rounded-lg p-4">
                   <ResponsiveContainer width={150} height={120}>
                     <PieChart>
@@ -201,58 +202,58 @@ export default function DashboardPage() {
           </Card>
 
           {/* Quick Stats */}
-          <Card className="p-8 border border-border bg-card hover:border-foreground/20 transition-all duration-300">
-            <div className="space-y-6">
+          <Card className="p-4 sm:p-6 md:p-8 border border-border bg-card hover:border-foreground/20 transition-all duration-300">
+            <div className="space-y-4 sm:space-y-6">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Are Owed</p>
-                <p className="text-3xl font-bold text-green-600">₹{totalOwed.toFixed(2)}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalOwed.toFixed(2)}</p>
               </div>
               <div className="border-t border-border pt-4">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Owe</p>
-                <p className="text-3xl font-bold text-red-600">₹{totalOwe.toFixed(2)}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-red-600">₹{totalOwe.toFixed(2)}</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* Bento Grid - Row 2: Charts and Groups */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
           {/* Spending Chart - Large */}
-          <Card className="lg:col-span-2 p-8 border border-border bg-card">
-            <div className="flex items-center justify-between mb-6">
+          <Card className="lg:col-span-2 p-4 sm:p-6 md:p-8 border border-border bg-card">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div>
-                <h2 className="text-lg font-bold">Monthly Spending</h2>
-                <p className="text-sm text-muted-foreground">Last 6 months overview</p>
+                <h2 className="text-base sm:text-lg font-bold">Monthly Spending</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">Last 6 months overview</p>
               </div>
             </div>
-            <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[200px] sm:h-[280px] flex items-center justify-center text-muted-foreground text-sm">
               Chart data aggregation not implemented yet
             </div>
           </Card>
 
           {/* Balance Details - Sidebar */}
-          <Card className="p-8 border border-border bg-card">
-            <h2 className="text-lg font-bold mb-6">Friend Balances</h2>
+          <Card className="p-4 sm:p-6 md:p-8 border border-border bg-card">
+            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-6">Friend Balances</h2>
             <div className="space-y-4">
-              <p className="text-muted-foreground text-sm">Friend balance aggregation not implemented yet</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Friend balance aggregation not implemented yet</p>
             </div>
           </Card>
         </div>
 
         {/* Bento Grid - Row 3: Groups */}
-        <Card className="p-8 border border-border bg-card">
-          <div className="flex items-center justify-between mb-8">
+        <Card className="p-4 sm:p-6 md:p-8 border border-border bg-card">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
             <div>
-              <h2 className="text-2xl font-bold">My Groups</h2>
-              <p className="text-sm text-muted-foreground mt-1">Chat with friends and split expenses</p>
+              <h2 className="text-xl sm:text-2xl font-bold">My Groups</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Chat with friends and split expenses</p>
             </div>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="font-medium bg-transparent">
+                <Button variant="outline" className="font-medium bg-transparent w-full sm:w-auto">
                   Create Group
                 </Button>
               </DialogTrigger>
-              <DialogContent className="border border-border bg-card">
+              <DialogContent className="border border-border bg-card max-w-[95%] sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>Create New Group</DialogTitle>
                   <DialogDescription>Start a new expense group with your friends.</DialogDescription>
@@ -276,22 +277,22 @@ export default function DashboardPage() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Pending Invites */}
             {invites.map((invite) => (
               <div key={invite.id} className="group">
-                <div className="p-6 rounded-lg border border-yellow-500/50 bg-yellow-500/10 h-full flex flex-col">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="font-bold text-lg">{invite.room.name}</h3>
-                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-600">
+                <div className="p-4 sm:p-6 rounded-lg border border-yellow-500/50 bg-yellow-500/10 h-full flex flex-col">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <h3 className="font-bold text-base sm:text-lg">{invite.room.name}</h3>
+                    <span className="text-xs font-bold px-2 sm:px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-600">
                       Invite
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">Invited by {invite.fromUser.username}</p>
-                  <div className="flex gap-2 mt-auto pt-4 border-t border-yellow-500/20">
+                  <p className="text-xs text-muted-foreground mb-3 sm:mb-4">Invited by {invite.fromUser.username}</p>
+                  <div className="flex gap-2 mt-auto pt-3 sm:pt-4 border-t border-yellow-500/20">
                     <Button
                       size="sm"
-                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
                       onClick={() => handleInviteResponse(invite.id, "ACCEPT")}
                     >
                       Accept
@@ -299,7 +300,7 @@ export default function DashboardPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50 text-xs sm:text-sm"
                       onClick={() => handleInviteResponse(invite.id, "REJECT")}
                     >
                       Reject
@@ -312,19 +313,19 @@ export default function DashboardPage() {
             {/* Active Groups */}
             {groups.map((group) => (
               <div key={group.id} className="group">
-                <div className="p-6 rounded-lg border border-border bg-secondary hover:bg-muted transition-all duration-300 cursor-pointer h-full flex flex-col">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="font-bold text-lg">{group.name}</h3>
+                <div className="p-4 sm:p-6 rounded-lg border border-border bg-secondary hover:bg-muted transition-all duration-300 cursor-pointer h-full flex flex-col">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <h3 className="font-bold text-base sm:text-lg">{group.name}</h3>
                     {/* Balance display would require fetching group balances, omitting for now */}
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">{group.members?.length || 0} members</p>
-                  <div className="flex gap-2 mt-auto pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-3 sm:mb-4">{group.members?.length || 0} members</p>
+                  <div className="flex gap-2 mt-auto pt-3 sm:pt-4 border-t border-border">
                     <Link href={`/groups/${group.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full bg-transparent">
+                      <Button variant="outline" size="sm" className="w-full bg-transparent text-xs sm:text-sm">
                         View
                       </Button>
                     </Link>
-                    <Button size="sm" className="w-full flex-1" onClick={() => openChat(group.id)}>
+                    <Button size="sm" className="w-full flex-1 text-xs sm:text-sm" onClick={() => openChat(group.id)}>
                       Chat
                     </Button>
                   </div>
@@ -341,14 +342,14 @@ export default function DashboardPage() {
         </Card>
 
         {/* Quick Actions Footer */}
-        <div className="mt-8 flex gap-4 justify-center">
-          <Link href="/chat/history">
-            <Button variant="outline" className="font-medium bg-transparent">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+          <Link href="/chat/history" className="w-full sm:w-auto">
+            <Button variant="outline" className="font-medium bg-transparent w-full sm:w-auto">
               View Chat History
             </Button>
           </Link>
-          <Link href="/settle-up">
-            <Button className="font-medium">Settle Up</Button>
+          <Link href="/settle-up" className="w-full sm:w-auto">
+            <Button className="font-medium w-full sm:w-auto">Settle Up</Button>
           </Link>
         </div>
       </div>

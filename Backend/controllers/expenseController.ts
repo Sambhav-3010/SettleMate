@@ -11,7 +11,7 @@ const fromCents = (cents: number) => cents / 100;
 export async function createExpense(req: Request, res: Response) {
   try {
     const payerId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
     const { amount, description, splits } = req.body;
 
     if (typeof amount !== "number" || amount <= 0) {
@@ -108,7 +108,7 @@ export async function createExpense(req: Request, res: Response) {
 export async function listExpenses(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
 
     const member = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId } },
@@ -134,7 +134,7 @@ export async function listExpenses(req: Request, res: Response) {
 export async function getBalances(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
 
     const member = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId } },
@@ -143,7 +143,10 @@ export async function getBalances(req: Request, res: Response) {
 
     const expenses = await prisma.expense.findMany({
       where: { roomId },
-      include: { splits: true, payer: true },
+      include: { 
+        splits: { include: { user: true } }, 
+        payer: { select: { id: true, username: true, name: true } } 
+      },
     });
 
     const netCents: Record<string, number> = {};
@@ -179,7 +182,8 @@ export async function getBalances(req: Request, res: Response) {
 export async function confirmSettlement(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId, expenseId } = req.params;
+    const roomId = req.params.roomId as string;
+    const expenseId = req.params.expenseId as string;
 
     // Verify user is a member of the room
     const member = await prisma.roomMember.findUnique({
@@ -248,7 +252,8 @@ export async function confirmSettlement(req: Request, res: Response) {
 export async function rejectSettlement(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId, expenseId } = req.params;
+    const roomId = req.params.roomId as string;
+    const expenseId = req.params.expenseId as string;
 
     const member = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId } },

@@ -66,7 +66,7 @@ export async function listRoomsForUser(req: Request, res: Response) {
 export async function getRoomDetails(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
 
     const isMember = await prisma.roomMember.findUnique({
       where: { roomId_userId: { roomId, userId } },
@@ -87,7 +87,7 @@ export async function getRoomDetails(req: Request, res: Response) {
 export async function addMemberByUsername(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
     const { username } = req.body;
     if (!username) return res.status(400).json({ message: "username required" });
 
@@ -117,7 +117,7 @@ export async function addMemberByUsername(req: Request, res: Response) {
 export async function sendJoinRequest(req: Request, res: Response) {
   try {
     const fromUserId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
 
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room) return res.status(404).json({ message: "Room not found" });
@@ -146,7 +146,7 @@ export async function sendJoinRequest(req: Request, res: Response) {
 export async function listPendingInvites(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
 
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room) return res.status(404).json({ message: "Room not found" });
@@ -167,7 +167,8 @@ export async function listPendingInvites(req: Request, res: Response) {
 export async function respondToInvite(req: Request, res: Response) {
   try {
     const ownerId = getUserId(req);
-    const { roomId, inviteId } = req.params;
+    const roomId = req.params.roomId as string;
+    const inviteId = req.params.inviteId as string;
     const { action } = req.body;
 
     const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
@@ -203,7 +204,7 @@ export async function respondToInvite(req: Request, res: Response) {
 export async function postMessage(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
     const { content } = req.body;
     if (!content) return res.status(400).json({ message: "content required" });
 
@@ -227,7 +228,7 @@ export async function postMessage(req: Request, res: Response) {
 export async function getMessages(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
     const take = Number(req.query.take) || 50;
     const skip = Number(req.query.skip) || 0;
 
@@ -254,7 +255,7 @@ export async function getMessages(req: Request, res: Response) {
 export async function updateRoom(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
     const { name, description } = req.body;
 
     // Check if user is owner or member
@@ -295,7 +296,7 @@ export async function updateRoom(req: Request, res: Response) {
 export async function addMemberToRoom(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { roomId } = req.params;
+    const roomId = req.params.roomId as string;
     const { userIds } = req.body; // Array of user IDs to add
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {

@@ -32,7 +32,7 @@ export async function getProfile(req: Request, res: Response) {
 
 export async function getUserById(req: Request, res: Response) {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -162,7 +162,7 @@ export async function getUserInvites(req: Request, res: Response) {
 export async function respondToUserInvite(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
-    const { inviteId } = req.params;
+    const inviteId = req.params.inviteId as string;
     const { action } = req.body;
 
     const invite = await prisma.invite.findUnique({

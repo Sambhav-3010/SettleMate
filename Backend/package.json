@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/app/server.js",
   "scripts": {
-    "build": "prisma generate && tsc && cpx \"app/generated/prisma/**\" \"dist/app/generated/prisma\"",
+    "build": "npx prisma generate && tsc && cpy \"app/generated/prisma/**\" \"dist/app/generated/prisma\"",
     "start": "node -r dotenv/config dist/app/server.js",
     "dev": "nodemon --exec tsx app/server.ts"
   },
@@ -40,7 +40,7 @@
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.0",
     "@types/socket.io": "^3.0.1",
-    "cpx": "^1.5.0",
+    "cpy-cli": "^5.0.0",
     "nodemon": "^3.1.10",
     "prisma": "^6.19.0",
     "ts-node": "^10.9.2",
