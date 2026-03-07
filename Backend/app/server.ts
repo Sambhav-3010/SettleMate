@@ -18,6 +18,17 @@ dotenv.config();
 
 const app = express();
 
+const FRONTEND_URL = process.env.FRONTEND_URL;
+const BACKEND_URL = process.env.BACKEND_URL;
+
+if (!FRONTEND_URL) {
+  throw new Error("FRONTEND_URL is required");
+}
+
+if (!BACKEND_URL) {
+  throw new Error("BACKEND_URL is required");
+}
+
 app.set("trust proxy", 1);
 
 const server = http.createServer(app);
@@ -38,7 +49,7 @@ app.use(cookieParser());
 // CORS configuration for cross-domain cookies
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
@@ -80,7 +91,7 @@ app.get("/", (_, res) => res.send("SettleMate backend running"));
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST"],
   },
@@ -105,12 +116,7 @@ io.on("connection", (socket) => {
 const PORT = Number(process.env.PORT) || 5000;
 
 server.listen(PORT, () => {
-  console.log(
-    `Server running at ${process.env.NODE_ENV === "production"
-      ? `https://settlemate.sambhav-mani-tripathi.dev`
-      : `http://localhost:${PORT}`
-    }`
-  );
+  console.log(`Server running at ${BACKEND_URL}`);
 });
 
 export { io };

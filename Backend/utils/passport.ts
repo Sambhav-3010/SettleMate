@@ -5,13 +5,18 @@ import dotenv from "dotenv";
 import prisma from "./prisma.js";
 
 dotenv.config();
+const BACKEND_URL = process.env.BACKEND_URL;
+
+if (!BACKEND_URL) {
+  throw new Error("BACKEND_URL is required");
+}
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      callbackURL: `${process.env.BACKEND_URL || "http://localhost:5000"}/auth/google/callback`,
+      callbackURL: `${BACKEND_URL}/auth/google/callback`,
       passReqToCallback: true,
     },
     async (
