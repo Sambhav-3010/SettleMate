@@ -35,13 +35,18 @@ pool.on("error", (err) => {
 app.use(express.json());
 app.use(cookieParser());
 
+// CORS configuration for cross-domain cookies
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["set-cookie"],
   })
 );
 
+// Session configuration for cross-domain cookies
 app.use(
   session({
     store: new pgStore({
@@ -52,12 +57,13 @@ app.use(
     secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
+    proxy: true, // Trust the proxy
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: true, // Always true for cross-domain (requires HTTPS)
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 30,
-      domain: process.env.NODE_ENV === "production" ? process.env.COOKIE_DOMAIN : undefined,
+      sameSite: "none", // Required for cross-domain cookies
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+      // DO NOT set domain for cross-origin cookies
     }
 
   })
@@ -74,8 +80,9 @@ app.get("/", (_, res) => res.send("SettleMate backend running"));
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
+    methods: ["GET", "POST"],
   },
 });
 

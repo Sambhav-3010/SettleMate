@@ -63,4 +63,24 @@ router.get("/logout", isAuthenticated, (req, res) => {
   });
 });
 
+// Debug endpoint to test session and cookies
+router.get("/debug", (req, res) => {
+  res.json({
+    isAuthenticated: req.isAuthenticated(),
+    sessionID: req.sessionID,
+    hasSession: !!req.session,
+    cookieSettings: {
+      secure: req.session?.cookie?.secure,
+      httpOnly: req.session?.cookie?.httpOnly,
+      sameSite: req.session?.cookie?.sameSite,
+      domain: req.session?.cookie?.domain,
+    },
+    user: req.isAuthenticated() ? {
+      id: req.user?.id,
+      username: req.user?.username,
+      email: req.user?.email,
+    } : null,
+  });
+});
+
 export default router;
