@@ -1,21 +1,24 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import { Router } from "express";
 import passport from "../utils/passport.js";
 import { googleAuth } from "../controllers/authController.js";
-import { isAuthenticated } from '../middlewares/isAuthenticated.js';
-import prisma from '../utils/prisma.js';
+import { isAuthenticated } from "../middlewares/isAuthenticated.js";
+import prisma from "../utils/prisma.js";
+import { clearAuthCookie, readAuthCookie } from "../utils/authCookie.js";
+import { verifyAuthToken } from "../utils/jwt.js";
+
 dotenv.config();
 
 const router = Router();
 
 router.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"], accessType: "offline" })
+  passport.authenticate("google", { scope: ["profile", "email"], accessType: "offline", session: false })
 );
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: process.env.FRONTEND_URL as string, session: true }),
+  passport.authenticate("google", { failureRedirect: process.env.FRONTEND_URL as string, session: false }),
   googleAuth
 );
 
@@ -31,11 +34,11 @@ router.get("/me", isAuthenticated, (req, res) => {
   });
 });
 
-router.put('/upi', isAuthenticated, async (req, res) => {
+router.put("/upi", isAuthenticated, async (req, res) => {
   const userId = (req.user as any)?.id;
 
   if (!userId) {
-    return res.status(401).json({ message: "Unauthorized to access the route", success: false })
+    return res.status(401).json({ message: "Unauthorized to access the route", success: false });
   }
 
   const { upiId, username } = req.body;
@@ -44,7 +47,7 @@ router.put('/upi', isAuthenticated, async (req, res) => {
   }
 
   try {
-    const updated = await prisma.user.update({
+    await prisma.user.update({
       where: { id: userId },
       data: { upiId: upiId, username: username },
     });
@@ -54,33 +57,42 @@ router.put('/upi', isAuthenticated, async (req, res) => {
   }
 });
 
-router.get("/logout", isAuthenticated, (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return res.status(500).json({ message: "Logout failed", error: err });
-    }
-    res.json({ message: "Logged out successfully" });
-  });
+router.get("/logout", (_req, res) => {
+  clearAuthCookie(res);
+  res.json({ message: "Logged out successfully" });
 });
 
-// Debug endpoint to test session and cookies
-router.get("/debug", (req, res) => {
-  res.json({
-    isAuthenticated: req.isAuthenticated(),
-    sessionID: req.sessionID,
-    hasSession: !!req.session,
-    cookieSettings: {
-      secure: req.session?.cookie?.secure,
-      httpOnly: req.session?.cookie?.httpOnly,
-      sameSite: req.session?.cookie?.sameSite,
-      domain: req.session?.cookie?.domain,
-    },
-    user: req.isAuthenticated() ? {
-      id: (req.user as any)?.id,
-      username: (req.user as any)?.username,
-      email: (req.user as any)?.email,
-    } : null,
-  });
+router.get("/debug", async (req, res) => {
+  const token = readAuthCookie(req);
+
+  if (!token) {
+    return res.json({
+      isAuthenticated: false,
+      reason: "No auth cookie",
+      user: null,
+    });
+  }
+
+  try {
+    const { sub } = verifyAuthToken(token);
+    const user = await prisma.user.findUnique({
+      where: { id: sub },
+      select: { id: true, username: true, email: true },
+    });
+
+    return res.json({
+      isAuthenticated: !!user,
+      reason: user ? "Valid JWT cookie" : "User not found",
+      user,
+    });
+  } catch (error) {
+    return res.json({
+      isAuthenticated: false,
+      reason: "Invalid JWT",
+      error: (error as Error).message,
+      user: null,
+    });
+  }
 });
 
 export default router;
