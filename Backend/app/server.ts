@@ -20,9 +20,14 @@ const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL;
 const BACKEND_URL = process.env.BACKEND_URL;
+const FRONTEND_URLS = (process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
+const allowedOrigins = Array.from(new Set([FRONTEND_URL, ...FRONTEND_URLS].filter(Boolean))) as string[];
 
-if (!FRONTEND_URL) {
-  throw new Error("FRONTEND_URL is required");
+if (allowedOrigins.length === 0) {
+  throw new Error("FRONTEND_URL or FRONTEND_URLS is required");
 }
 
 if (!BACKEND_URL) {
@@ -49,7 +54,12 @@ app.use(cookieParser());
 // CORS configuration for cross-domain cookies
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
@@ -70,11 +80,10 @@ app.use(
     saveUninitialized: false,
     proxy: true, // Trust the proxy
     cookie: {
-      secure: true, // Always true for cross-domain (requires HTTPS)
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
       httpOnly: true,
-      sameSite: "none", // Required for cross-domain cookies
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-      // DO NOT set domain for cross-origin cookies
     }
 
   })
@@ -91,7 +100,7 @@ app.get("/", (_, res) => res.send("SettleMate backend running"));
 
 const io = new Server(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST"],
   },

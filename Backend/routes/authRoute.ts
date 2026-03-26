@@ -23,10 +23,10 @@ router.get("/me", isAuthenticated, (req, res) => {
   res.json({
     message: "true",
     user: {
-      username: req.user?.username,
-      name: req.user?.name,
-      email: req.user?.email,
-      id: req.user?.id,
+      username: (req.user as any)?.username,
+      name: (req.user as any)?.name,
+      email: (req.user as any)?.email,
+      id: (req.user as any)?.id,
     },
   });
 });
@@ -35,7 +35,7 @@ router.put('/upi', isAuthenticated, async (req, res) => {
   const userId = (req.user as any)?.id;
 
   if (!userId) {
-    return res.status(401).json({ message: "Unautorize to access the route", success: true })
+    return res.status(401).json({ message: "Unauthorized to access the route", success: false })
   }
 
   const { upiId, username } = req.body;
@@ -76,9 +76,9 @@ router.get("/debug", (req, res) => {
       domain: req.session?.cookie?.domain,
     },
     user: req.isAuthenticated() ? {
-      id: req.user?.id,
-      username: req.user?.username,
-      email: req.user?.email,
+      id: (req.user as any)?.id,
+      username: (req.user as any)?.username,
+      email: (req.user as any)?.email,
     } : null,
   });
 });

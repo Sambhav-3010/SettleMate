@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
@@ -113,10 +114,11 @@ export function ChatModal({ isOpen, onOpenChange, roomId }: ChatModalProps) {
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-                    {messages.map((message) => {
+                    {messages.map((message, index) => {
                         const isMe = message.senderId === currentUser?.id
+                        const messageKey = message.id || `${message.senderId}-${message.createdAt}-${index}-${message.content}`
                         return (
-                            <div key={message.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                            <div key={messageKey} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                                 <div
                                     className={`max-w-[85%] sm:max-w-[80%] px-2.5 sm:px-3 py-2 rounded-lg shadow-sm ${isMe
                                         ? "bg-primary text-primary-foreground rounded-tr-none"

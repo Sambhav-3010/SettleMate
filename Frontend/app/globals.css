@@ -10,27 +10,28 @@
 
 :root {
   /* === NEON BAUHAUS COLOR PALETTE (Light Mode) === */
-  --background: oklch(0.96 0.005 260);
-  --foreground: oklch(0.18 0.02 260);
-  --card: oklch(0.98 0.003 260);
-  --card-foreground: oklch(0.18 0.02 260);
-  --popover: oklch(0.98 0.003 260);
-  --popover-foreground: oklch(0.35 0.02 260);
+  --background: oklch(0.96 0.005 150);
+  --foreground: oklch(0.18 0.02 150);
+  --card: oklch(0.98 0.003 150);
+  --card-foreground: oklch(0.18 0.02 150);
+  --popover: oklch(0.98 0.003 150);
+  --popover-foreground: oklch(0.35 0.02 150);
 
-  /* Neon Primary - Vibrant Cyan */
-  --primary: oklch(0.72 0.15 195);
+  /* Neon Primary - Vibrant Emerald */
+  --primary: oklch(0.72 0.15 145);
   --primary-foreground: oklch(0.98 0 0);
+  --primary-rgb: 34, 197, 94;
 
   /* Clean Neutral Secondary */
-  --secondary: oklch(0.94 0.005 260);
+  --secondary: oklch(0.94 0.005 150);
   --secondary-foreground: oklch(0.25 0 0);
 
   /* Muted Tones */
-  --muted: oklch(0.92 0.005 260);
-  --muted-foreground: oklch(0.50 0.02 260);
+  --muted: oklch(0.92 0.005 150);
+  --muted-foreground: oklch(0.50 0.02 150);
 
-  /* Neon Accent - Magenta */
-  --accent: oklch(0.68 0.18 330);
+  /* Neon Accent */
+  --accent: oklch(0.68 0.18 135);
   --accent-foreground: oklch(0.98 0 0);
 
   /* Status Colors */
@@ -40,13 +41,13 @@
   --success-foreground: oklch(0.98 0 0);
 
   /* Borders & Inputs */
-  --border: oklch(0.88 0.01 260);
-  --input: oklch(0.96 0.005 260);
-  --ring: oklch(0.72 0.15 195);
+  --border: oklch(0.88 0.01 150);
+  --input: oklch(0.96 0.005 150);
+  --ring: oklch(0.72 0.15 145);
 
   /* Chart Colors - Bauhaus Neon */
-  --chart-1: oklch(0.72 0.15 195);
-  --chart-2: oklch(0.68 0.18 330);
+  --chart-1: oklch(0.72 0.15 145);
+  --chart-2: oklch(0.68 0.18 135);
   --chart-3: oklch(0.68 0.18 145);
   --chart-4: oklch(0.75 0.15 85);
   --chart-5: oklch(0.65 0.18 280);
@@ -58,38 +59,38 @@
   --font-serif: ui-serif, Georgia, serif;
 
   /* Sidebar */
-  --sidebar: oklch(0.98 0.003 260);
-  --sidebar-foreground: oklch(0.50 0.02 260);
-  --sidebar-primary: oklch(0.72 0.15 195);
+  --sidebar: oklch(0.98 0.003 150);
+  --sidebar-foreground: oklch(0.50 0.02 150);
+  --sidebar-primary: oklch(0.72 0.15 145);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.94 0.005 260);
+  --sidebar-accent: oklch(0.94 0.005 150);
   --sidebar-accent-foreground: oklch(0.25 0 0);
-  --sidebar-border: oklch(0.90 0.01 260);
-  --sidebar-ring: oklch(0.72 0.15 195);
+  --sidebar-border: oklch(0.90 0.01 150);
+  --sidebar-ring: oklch(0.72 0.15 145);
 
   /* === NEUMORPHIC SHADOWS (Light Mode) === */
   --shadow-neu-outset:
-    8px 8px 20px oklch(0.85 0.005 260),
+    8px 8px 20px oklch(0.85 0.005 150),
     -8px -8px 20px oklch(1 0 0);
   --shadow-neu-outset-sm:
-    4px 4px 10px oklch(0.87 0.005 260),
+    4px 4px 10px oklch(0.87 0.005 150),
     -4px -4px 10px oklch(1 0 0);
   --shadow-neu-inset:
-    inset 4px 4px 12px oklch(0.87 0.005 260),
+    inset 4px 4px 12px oklch(0.87 0.005 150),
     inset -4px -4px 12px oklch(1 0 0);
   --shadow-neu-inset-sm:
-    inset 2px 2px 6px oklch(0.88 0.005 260),
+    inset 2px 2px 6px oklch(0.88 0.005 150),
     inset -2px -2px 6px oklch(1 0 0);
 
   /* Neon Glows */
-  --glow-primary: 0 0 20px oklch(0.72 0.15 195 / 0.35), 0 0 40px oklch(0.72 0.15 195 / 0.15);
-  --glow-accent: 0 0 20px oklch(0.68 0.18 330 / 0.35), 0 0 40px oklch(0.68 0.18 330 / 0.15);
+  --glow-primary: 0 0 20px oklch(0.72 0.15 145 / 0.35), 0 0 40px oklch(0.72 0.15 145 / 0.15);
+  --glow-accent: 0 0 20px oklch(0.68 0.18 135 / 0.35), 0 0 40px oklch(0.68 0.18 135 / 0.15);
   --glow-success: 0 0 20px oklch(0.68 0.18 145 / 0.35);
   --glow-destructive: 0 0 20px oklch(0.60 0.20 25 / 0.35);
 
   /* Glassmorphism */
-  --glass-bg: oklch(0.98 0.003 260 / 0.7);
-  --glass-border: oklch(0.72 0.15 195 / 0.2);
+  --glass-bg: oklch(0.98 0.003 150 / 0.7);
+  --glass-border: oklch(0.72 0.15 145 / 0.2);
 
   /* Standard Shadows */
   --shadow-2xs: 0px 1px 2px oklch(0 0 0 / 0.04);
@@ -108,26 +109,27 @@
 /* === DARK MODE - NEON BAUHAUS === */
 .dark {
   /* Deep Dark Background */
-  --background: oklch(0.14 0.015 260);
+  --background: oklch(0.14 0.015 150);
   --foreground: oklch(0.94 0.01 220);
-  --card: oklch(0.18 0.015 260);
+  --card: oklch(0.18 0.015 150);
   --card-foreground: oklch(0.94 0.01 220);
-  --popover: oklch(0.20 0.015 260);
+  --popover: oklch(0.20 0.015 150);
   --popover-foreground: oklch(0.75 0.01 220);
 
-  /* Neon Cyan Primary */
-  --primary: oklch(0.78 0.16 195);
-  --primary-foreground: oklch(0.14 0.015 260);
+  /* Neon Emerald Primary */
+  --primary: oklch(0.78 0.16 145);
+  --primary-foreground: oklch(0.14 0.015 150);
+  --primary-rgb: 34, 197, 94;
 
   /* Dark Surfaces */
-  --secondary: oklch(0.22 0.015 260);
+  --secondary: oklch(0.22 0.015 150);
   --secondary-foreground: oklch(0.94 0.01 220);
-  --muted: oklch(0.24 0.015 260);
+  --muted: oklch(0.24 0.015 150);
   --muted-foreground: oklch(0.65 0.01 220);
 
-  /* Neon Magenta Accent */
-  --accent: oklch(0.72 0.20 330);
-  --accent-foreground: oklch(0.14 0.015 260);
+  /* Neon Accent */
+  --accent: oklch(0.72 0.20 135);
+  --accent-foreground: oklch(0.14 0.015 150);
 
   /* Neon Status Colors */
   --destructive: oklch(0.65 0.22 25);
@@ -136,50 +138,50 @@
   --success-foreground: oklch(0.14 0 0);
 
   /* Borders */
-  --border: oklch(0.30 0.02 260);
-  --input: oklch(0.20 0.015 260);
-  --ring: oklch(0.78 0.16 195);
+  --border: oklch(0.30 0.02 150);
+  --input: oklch(0.20 0.015 150);
+  --ring: oklch(0.78 0.16 145);
 
   /* Neon Chart Colors */
-  --chart-1: oklch(0.78 0.16 195);
-  --chart-2: oklch(0.72 0.20 330);
+  --chart-1: oklch(0.78 0.16 145);
+  --chart-2: oklch(0.72 0.20 135);
   --chart-3: oklch(0.72 0.20 145);
   --chart-4: oklch(0.78 0.16 85);
   --chart-5: oklch(0.70 0.20 280);
 
   /* Sidebar */
-  --sidebar: oklch(0.12 0.015 260);
+  --sidebar: oklch(0.12 0.015 150);
   --sidebar-foreground: oklch(0.65 0.01 220);
-  --sidebar-primary: oklch(0.78 0.16 195);
-  --sidebar-primary-foreground: oklch(0.14 0.015 260);
-  --sidebar-accent: oklch(0.24 0.015 260);
+  --sidebar-primary: oklch(0.78 0.16 145);
+  --sidebar-primary-foreground: oklch(0.14 0.015 150);
+  --sidebar-accent: oklch(0.24 0.015 150);
   --sidebar-accent-foreground: oklch(0.94 0 0);
-  --sidebar-border: oklch(0.30 0.02 260);
-  --sidebar-ring: oklch(0.78 0.16 195);
+  --sidebar-border: oklch(0.30 0.02 150);
+  --sidebar-ring: oklch(0.78 0.16 145);
 
   /* === NEUMORPHIC SHADOWS (Dark Mode) === */
   --shadow-neu-outset:
-    8px 8px 20px oklch(0.08 0.015 260),
-    -8px -8px 20px oklch(0.22 0.015 260);
+    8px 8px 20px oklch(0.08 0.015 150),
+    -8px -8px 20px oklch(0.22 0.015 150);
   --shadow-neu-outset-sm:
-    4px 4px 10px oklch(0.08 0.015 260),
-    -4px -4px 10px oklch(0.22 0.015 260);
+    4px 4px 10px oklch(0.08 0.015 150),
+    -4px -4px 10px oklch(0.22 0.015 150);
   --shadow-neu-inset:
-    inset 4px 4px 12px oklch(0.08 0.015 260),
-    inset -4px -4px 12px oklch(0.22 0.015 260);
+    inset 4px 4px 12px oklch(0.08 0.015 150),
+    inset -4px -4px 12px oklch(0.22 0.015 150);
   --shadow-neu-inset-sm:
-    inset 2px 2px 6px oklch(0.10 0.015 260),
-    inset -2px -2px 6px oklch(0.20 0.015 260);
+    inset 2px 2px 6px oklch(0.10 0.015 150),
+    inset -2px -2px 6px oklch(0.20 0.015 150);
 
   /* Enhanced Neon Glows */
-  --glow-primary: 0 0 25px oklch(0.78 0.16 195 / 0.45), 0 0 50px oklch(0.78 0.16 195 / 0.20);
-  --glow-accent: 0 0 25px oklch(0.72 0.20 330 / 0.45), 0 0 50px oklch(0.72 0.20 330 / 0.20);
+  --glow-primary: 0 0 25px oklch(0.78 0.16 145 / 0.45), 0 0 50px oklch(0.78 0.16 145 / 0.20);
+  --glow-accent: 0 0 25px oklch(0.72 0.20 135 / 0.45), 0 0 50px oklch(0.72 0.20 135 / 0.20);
   --glow-success: 0 0 25px oklch(0.72 0.20 145 / 0.45);
   --glow-destructive: 0 0 25px oklch(0.65 0.22 25 / 0.45);
 
   /* Glassmorphism Dark */
-  --glass-bg: oklch(0.18 0.015 260 / 0.75);
-  --glass-border: oklch(0.78 0.16 195 / 0.25);
+  --glass-bg: oklch(0.18 0.015 150 / 0.75);
+  --glass-border: oklch(0.78 0.16 145 / 0.25);
 
   /* Dark Shadows */
   --shadow-2xs: 0px 1px 2px oklch(0 0 0 / 0.15);
@@ -270,7 +272,7 @@
   }
 
   ::selection {
-    background: oklch(0.78 0.16 195 / 0.25);
+    background: oklch(0.78 0.16 145 / 0.25);
     color: inherit;
   }
 }
@@ -296,7 +298,7 @@
   }
 
   50% {
-    box-shadow: 0 0 30px oklch(0.78 0.16 195 / 0.5), 0 0 60px oklch(0.78 0.16 195 / 0.25);
+    box-shadow: 0 0 30px oklch(0.78 0.16 145 / 0.5), 0 0 60px oklch(0.78 0.16 145 / 0.25);
   }
 }
 
@@ -376,7 +378,7 @@
 
   /* Gradient text */
   .text-gradient {
-    background: linear-gradient(135deg, oklch(0.78 0.16 195), oklch(0.72 0.20 330));
+    background: linear-gradient(135deg, oklch(0.78 0.16 145), oklch(0.72 0.20 135));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -389,19 +391,19 @@
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    background: oklch(0.78 0.16 195 / 0.1);
+    background: oklch(0.78 0.16 145 / 0.1);
     filter: blur(40px);
     z-index: -1;
   }
 
   /* Neon border */
   .border-glow {
-    border: 1px solid oklch(0.78 0.16 195 / 0.4);
+    border: 1px solid oklch(0.78 0.16 145 / 0.4);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
 
   .border-glow:hover {
-    border-color: oklch(0.78 0.16 195 / 0.7);
+    border-color: oklch(0.78 0.16 145 / 0.7);
     box-shadow: var(--glow-primary);
   }
 
