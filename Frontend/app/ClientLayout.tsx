@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import Link from "next/link"
-import { LogOut, User as UserIcon, Moon, Sun } from "lucide-react"
+import { LogOut, User as UserIcon } from "lucide-react"
 import { useAuth, User } from "../contexts/authContext"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -14,57 +13,24 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDark] = useState(true)
-  const [mounted, setMounted] = useState(false)
   const { user, logout } = useAuth()
 
   useEffect(() => {
-    setMounted(true)
-    const savedTheme = localStorage.getItem("theme")
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    const initialDark = savedTheme ? savedTheme === "dark" : prefersDark
-    setIsDark(initialDark)
-    updateTheme(initialDark)
+    document.documentElement.classList.add("dark")
   }, [])
 
-  const updateTheme = (dark: boolean) => {
-    const html = document.documentElement
-    if (dark) {
-      html.classList.add("dark")
-      localStorage.setItem("theme", "dark")
-    } else {
-      html.classList.remove("dark")
-      localStorage.setItem("theme", "light")
-    }
-  }
-
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    updateTheme(next)
-  }
-
   return (
-    <>
-      {mounted && (
-        <ThemeProvider isDark={isDark} toggleTheme={toggleTheme} user={user} logout={logout}>
-          {children}
-        </ThemeProvider>
-      )}
-      {!mounted && <>{children}</>}
-    </>
+    <ThemeShell user={user} logout={logout}>
+      {children}
+    </ThemeShell>
   )
 }
 
-function ThemeProvider({
-  isDark,
-  toggleTheme,
+function ThemeShell({
   user,
   logout,
   children,
 }: {
-  isDark: boolean
-  toggleTheme: () => void
   children: React.ReactNode
   user: User | null
   logout: () => Promise<void>
@@ -108,16 +74,6 @@ function ThemeProvider({
             ) : (
               <span className="hidden text-xs uppercase tracking-[0.16em] text-muted-foreground sm:inline">Guest Mode</span>
             )}
-
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              title="Toggle Theme"
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
           </div>
         </div>
       </header>

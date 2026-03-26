@@ -215,7 +215,9 @@ export async function postMessage(req: Request, res: Response) {
 
     const message = await prisma.message.create({
       data: { roomId, senderId: userId, content },
+      include: { sender: { select: { id: true, username: true, name: true } } },
     });
+
     io.to(roomId).emit("newMessage", message);
 
     res.status(201).json(message);

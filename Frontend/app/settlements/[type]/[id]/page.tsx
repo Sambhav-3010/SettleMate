@@ -10,7 +10,6 @@ import { useForm } from "react-hook-form"
 import axios from "axios"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Wallet } from "lucide-react"
-import { io } from "socket.io-client"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
 import { QRPaymentModal } from "@/components/qr-payment-modal"
 
@@ -40,7 +39,6 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [calculatedAmount, setCalculatedAmount] = useState<number>(0)
   const router = useRouter()
-  const [socket, setSocket] = useState<any>(null)
   const [isQRModalOpen, setIsQRModalOpen] = useState(false)
   const [receiverInfo, setReceiverInfo] = useState<{ name: string; upiId: string } | null>(null)
 
@@ -48,11 +46,6 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
 
   useEffect(() => {
     if (!loading) {
-      const newSocket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
-        withCredentials: true,
-      })
-      setSocket(newSocket)
-
       axios
         .get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
         .then((res) => setCurrentUser(res.data))
@@ -76,10 +69,6 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
           .get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/expenses`, { withCredentials: true })
           .then((res) => setExpenses(res.data.expenses))
           .catch((err) => console.error("Failed to fetch expenses", err))
-      }
-
-      return () => {
-        newSocket.disconnect()
       }
     }
   }, [loading, id, isGroup])
@@ -182,24 +171,12 @@ export default function SettlePage({ params }: { params: Promise<{ type: string;
         withCredentials: true,
       })
 
-      if (socket) {
-        const message = `${currentUser?.name || "Someone"} claims to have paid you ₹${calculatedAmount}. Please confirm if you received the payment.`
-
-        socket.emit("sendMessage", {
-          roomId: id,
-          message: {
-            roomId: id,
-            content: message,
-            senderId: currentUser.id,
-          },
-        })
-
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/messages`,
-          { content: message },
-          { withCredentials: true },
-        )
-      }
+      const message = `${currentUser?.name || "Someone"} claims to have paid you ₹${calculatedAmount}. Please confirm if you received the payment.`
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/rooms/${id}/messages`,
+        { content: message },
+        { withCredentials: true },
+      )
 
       setIsQRModalOpen(false)
       router.push(`/groups/${id}`)

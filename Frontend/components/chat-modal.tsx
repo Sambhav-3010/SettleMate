@@ -18,8 +18,8 @@ interface Message {
   senderId: string
   content: string
   createdAt: string
-  sender: {
-    username: string
+  sender?: {
+    username?: string
   }
 }
 
@@ -40,6 +40,7 @@ export function ChatModal({ isOpen, onOpenChange, roomId }: ChatModalProps) {
   const [room, setRoom] = useState<Room | null>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const socketRef = useRef<Socket | null>(null)
+  const scrollAnchorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen || !roomId) return
@@ -74,6 +75,11 @@ export function ChatModal({ isOpen, onOpenChange, roomId }: ChatModalProps) {
     }
   }, [isOpen, roomId])
 
+  useEffect(() => {
+    if (!isOpen) return
+    scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+  }, [messages, isOpen])
+
   const handleSendMessage = async (message: string) => {
     if (!message.trim() || !roomId) return
 
@@ -88,18 +94,21 @@ export function ChatModal({ isOpen, onOpenChange, roomId }: ChatModalProps) {
     }
   }
 
-  const mappedMessages = messages.map((message) => ({
-    id: message.id,
-    sender: message.senderId === currentUser?.id ? "You" : message.sender.username,
-    text: message.content,
-    timestamp: new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-  }))
+  const mappedMessages = messages.map((message) => {
+    const isMe = message.senderId === currentUser?.id
+    return {
+      id: message.id,
+      sender: isMe ? "You" : message.sender?.username || "Member",
+      text: message.content,
+      timestamp: new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    }
+  })
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[90vh] max-w-[95%] border border-border bg-card p-0 sm:h-[680px] sm:max-w-2xl">
-        <DialogHeader className="border-b border-border p-4">
-          <DialogTitle className="flex items-center justify-between pr-6">
+      <DialogContent className="flex h-[90vh] max-w-[95%] flex-col overflow-hidden border border-border bg-card p-0 sm:h-[680px] sm:max-w-2xl">
+        <DialogHeader className="shrink-0 border-b border-border p-4">
+          <DialogTitle className="flex items-center justify-between pr-14">
             <span>{room?.name || "Chat"}</span>
             <span className="font-mono text-xs text-muted-foreground">{room?.members?.length || 0} members</span>
           </DialogTitle>
@@ -107,7 +116,7 @@ export function ChatModal({ isOpen, onOpenChange, roomId }: ChatModalProps) {
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
-          <ChatContainer messages={mappedMessages} compact />
+          <ChatContainer messages={mappedMessages} compact scrollAnchorRef={scrollAnchorRef} />
           <ChatInput onSendMessage={handleSendMessage} compact />
         </div>
       </DialogContent>

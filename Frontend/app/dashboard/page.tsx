@@ -188,8 +188,8 @@ export default function DashboardPage() {
             <Link href="/settings" className="block">
               <Button variant="outline" className="w-full justify-between">Open Settings</Button>
             </Link>
-            <Link href="/settle-up" className="block">
-              <Button className="w-full justify-between">Settle Up</Button>
+            <Link href="/expenses/new" className="block">
+              <Button className="w-full justify-between">Create Expense</Button>
             </Link>
           </div>
         </Card>

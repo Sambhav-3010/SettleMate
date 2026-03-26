@@ -1,3 +1,4 @@
+import type { RefObject } from "react"
 import { Card } from "@/components/ui/card"
 import { ChatMessage } from "./chat-message"
 
@@ -11,12 +12,15 @@ interface Message {
 interface ChatContainerProps {
   messages: Message[]
   compact?: boolean
+  scrollAnchorRef?: RefObject<HTMLDivElement | null>
 }
 
-export function ChatContainer({ messages, compact = false }: ChatContainerProps) {
+export function ChatContainer({ messages, compact = false, scrollAnchorRef }: ChatContainerProps) {
   return (
-    <Card className={`line-panel mb-0 overflow-y-auto ${compact ? "h-full p-3" : "h-[62vh] p-5"}`}>
-      <div className="space-y-3">
+    <Card
+      className={`mb-0 min-h-0 ${compact ? "flex-1 p-3" : "h-[62vh] p-5"} !overflow-y-auto !overflow-x-hidden scrollbar-hidden`}
+    >
+      <div className="space-y-3 pr-1">
         {messages.map((message) => (
           <ChatMessage
             key={message.id}
@@ -26,6 +30,7 @@ export function ChatContainer({ messages, compact = false }: ChatContainerProps)
             isOwn={message.sender === "You"}
           />
         ))}
+        <div ref={scrollAnchorRef} />
       </div>
     </Card>
   )

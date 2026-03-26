@@ -16,8 +16,8 @@ interface Message {
   senderId: string
   content: string
   createdAt: string
-  sender: {
-    username: string
+  sender?: {
+    username?: string
   }
 }
 
@@ -100,7 +100,7 @@ export default function ChatRoom() {
 
   const mappedMessages = messages.map((message) => ({
     id: message.id,
-    sender: message.senderId === currentUser?.id ? "You" : message.sender.username,
+    sender: message.senderId === currentUser?.id ? "You" : message.sender?.username || "Member",
     text: message.content,
     timestamp: new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
   }))
