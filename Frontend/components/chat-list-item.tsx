@@ -12,22 +12,16 @@ interface ChatListItemProps {
 export function ChatListItem({ id, groupName, lastMessage, lastMessageTime, unreadCount }: ChatListItemProps) {
   return (
     <Link href={`/chat/room/${id}`}>
-      <Card className="p-6 border border-border bg-card hover:border-foreground/20 hover:bg-secondary transition-all duration-300 cursor-pointer group">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-bold text-lg group-hover:text-foreground">{groupName}</h3>
-              {unreadCount > 0 && (
-                <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full">
-                  {unreadCount}
-                </span>
-              )}
+      <Card className="line-panel p-5 transition-colors hover:border-white/30">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2">
+              <h3 className="text-lg font-semibold tracking-[-0.01em]">{groupName}</h3>
+              {unreadCount > 0 && <span className="border border-border px-2 py-0.5 text-xs">{unreadCount}</span>}
             </div>
-            <p className="text-sm text-muted-foreground truncate">{lastMessage}</p>
+            <p className="truncate text-sm text-muted-foreground">{lastMessage}</p>
           </div>
-          <div className="text-right ml-4 flex-shrink-0">
-            <p className="text-xs text-muted-foreground">{lastMessageTime}</p>
-          </div>
+          <p className="font-mono text-xs text-muted-foreground">{lastMessageTime}</p>
         </div>
       </Card>
     </Link>

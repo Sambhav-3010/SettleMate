@@ -12,8 +12,14 @@ import { useAuthGuard } from "@/hooks/useAuthGuard"
 import { Loader2 } from "lucide-react"
 
 export default function AddExpensePage() {
-  const { user, loading } = useAuthGuard()
-  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm()
+  const { loading } = useAuthGuard()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    formState: { errors },
+  } = useForm()
 
   const [tab, setTab] = useState("individual")
 
@@ -31,50 +37,51 @@ export default function AddExpensePage() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
+    <main className="app-shell min-h-[calc(100vh-4rem)]">
+      <div className="mx-auto max-w-4xl space-y-4">
+        <section className="line-panel flex items-center justify-between p-6">
+          <div>
+            <p className="muted-label">/// Expense</p>
+            <h1 className="text-3xl font-semibold tracking-[-0.02em] md:text-4xl">Create Expense</h1>
+          </div>
           <Link href="/dashboard">
-            <Button variant="outline">← Back</Button>
+            <Button variant="outline">Back</Button>
           </Link>
-          <h1 className="text-3xl font-bold">Add Expense</h1>
-        </div>
+        </section>
 
-        <Card className="p-8 border border-border">
+        <Card className="line-panel p-6">
           <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-secondary">
-              <TabsTrigger value="individual">Individual</TabsTrigger>
-              <TabsTrigger value="group">Group</TabsTrigger>
+            <TabsList className="grid h-auto w-full grid-cols-2 rounded-none border border-border bg-card p-1">
+              <TabsTrigger value="individual" className="rounded-none">Individual</TabsTrigger>
+              <TabsTrigger value="group" className="rounded-none">Group</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="individual" className="space-y-6">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Description</label>
-                  <Input placeholder="e.g., Dinner" {...register("description", { required: true })} />
-                  {errors.description && <p className="text-red-600 text-xs mt-1">Description is required</p>}
+            <TabsContent value="individual" className="m-0">
+              <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium">Description</label>
+                  <Input placeholder="Dinner" {...register("description", { required: true })} />
+                  {errors.description && <p className="mt-1 text-xs text-red-400">Description is required</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Amount</label>
+                  <label className="mb-2 block text-sm font-medium">Amount</label>
                   <Input type="number" step="0.01" placeholder="0.00" {...register("amount", { required: true })} />
-                  {errors.amount && <p className="text-red-600 text-xs mt-1">Amount is required</p>}
+                  {errors.amount && <p className="mt-1 text-xs text-red-400">Amount is required</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Category</label>
-
+                  <label className="mb-2 block text-sm font-medium">Category</label>
                   <Controller
                     name="category"
                     control={control}
                     rules={{ required: true }}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange}>
-                        <SelectTrigger className="bg-input text-foreground">
+                        <SelectTrigger>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-card border border-border">
+                        <SelectContent>
                           <SelectItem value="food">Food</SelectItem>
                           <SelectItem value="transport">Transport</SelectItem>
                           <SelectItem value="entertainment">Entertainment</SelectItem>
@@ -82,29 +89,27 @@ export default function AddExpensePage() {
                       </Select>
                     )}
                   />
-
-                  {errors.category && <p className="text-red-600 text-xs mt-1">Category is required</p>}
+                  {errors.category && <p className="mt-1 text-xs text-red-400">Category is required</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Date</label>
+                  <label className="mb-2 block text-sm font-medium">Date</label>
                   <Input type="date" {...register("date", { required: true })} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">With Person</label>
+                  <label className="mb-2 block text-sm font-medium">With Person</label>
                   <Input placeholder="Search contact..." {...register("contact")} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Paid By</label>
-
+                  <label className="mb-2 block text-sm font-medium">Paid By</label>
                   <Controller
                     name="paidBy"
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange}>
-                        <SelectTrigger className="bg-input text-foreground">
+                        <SelectTrigger>
                           <SelectValue placeholder="Select person" />
                         </SelectTrigger>
                         <SelectContent>
@@ -116,22 +121,22 @@ export default function AddExpensePage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full">Create Expense</Button>
+                <div className="md:col-span-2">
+                  <Button type="submit" className="w-full">Create Expense</Button>
+                </div>
               </form>
             </TabsContent>
 
-            <TabsContent value="group" className="space-y-6">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Select Group</label>
-
+            <TabsContent value="group" className="m-0">
+              <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium">Select Group</label>
                   <Controller
                     name="group"
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange}>
-                        <SelectTrigger className="bg-input text-foreground">
+                        <SelectTrigger>
                           <SelectValue placeholder="Choose group" />
                         </SelectTrigger>
                         <SelectContent>
@@ -143,22 +148,24 @@ export default function AddExpensePage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Description</label>
-                  <Input placeholder="e.g., Groceries" {...register("groupDescription")} />
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium">Description</label>
+                  <Input placeholder="Groceries" {...register("groupDescription")} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Amount</label>
+                  <label className="mb-2 block text-sm font-medium">Amount</label>
                   <Input type="number" step="0.01" {...register("groupAmount")} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Date</label>
+                  <label className="mb-2 block text-sm font-medium">Date</label>
                   <Input type="date" {...register("groupDate")} />
                 </div>
 
-                <Button type="submit" className="w-full">Create Expense</Button>
+                <div className="md:col-span-2">
+                  <Button type="submit" className="w-full">Create Expense</Button>
+                </div>
               </form>
             </TabsContent>
           </Tabs>

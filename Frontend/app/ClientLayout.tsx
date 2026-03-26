@@ -14,16 +14,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(true)
   const [mounted, setMounted] = useState(false)
   const { user, logout } = useAuth()
 
   useEffect(() => {
     setMounted(true)
-    const isDarkMode =
-      localStorage.getItem("theme") === "dark" || window.matchMedia("(prefers-color-scheme: dark)").matches
-    setIsDark(isDarkMode)
-    updateTheme(isDarkMode)
+    const savedTheme = localStorage.getItem("theme")
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+    const initialDark = savedTheme ? savedTheme === "dark" : prefersDark
+    setIsDark(initialDark)
+    updateTheme(initialDark)
   }, [])
 
   const updateTheme = (dark: boolean) => {
@@ -38,9 +39,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }
 
   const toggleTheme = () => {
-    const newDark = !isDark
-    setIsDark(newDark)
-    updateTheme(newDark)
+    const next = !isDark
+    setIsDark(next)
+    updateTheme(next)
   }
 
   return (
@@ -70,43 +71,42 @@ function ThemeProvider({
 }) {
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b border-border">
-        <div className="flex items-center justify-between p-4 max-w-7xl mx-auto w-full">
-          <Link
-            href="/"
-            className="text-2xl font-bold text-primary hover:opacity-85 transition flex items-center space-x-2"
-          >
-            <span>SettleMate</span>
+      <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+        <div className="section-wrap flex h-16 items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-3">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-xs font-bold">
+              S
+            </span>
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground/90">SettleMate</span>
           </Link>
 
-          <div className="flex items-center space-x-3">
-
+          <div className="flex items-center gap-2 md:gap-3">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger className="outline-none">
-                  <Avatar className="cursor-pointer">
-                    <AvatarFallback className="bg-primary text-white font-semibold uppercase">
-                      {user.username ? user.username[0] : <UserIcon className="w-4 h-4" />}
+                  <Avatar className="cursor-pointer border border-border bg-card">
+                    <AvatarFallback className="bg-transparent font-semibold uppercase text-foreground">
+                      {user.username ? user.username[0] : <UserIcon className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="min-w-[150px]">
+                <DropdownMenuContent align="end" className="min-w-[170px] border-border bg-popover">
                   <DropdownMenuItem disabled className="opacity-70">
                     {user.username}
                   </DropdownMenuItem>
                   <Link href="/settings">
                     <DropdownMenuItem className="cursor-pointer">
-                      <UserIcon className="mr-2 w-4 h-4" /> Settings
+                      <UserIcon className="mr-2 h-4 w-4" /> Settings
                     </DropdownMenuItem>
                   </Link>
-                  <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={logout}>
-                    <LogOut className="mr-2 w-4 h-4" /> Logout
+                  <DropdownMenuItem className="cursor-pointer text-red-500" onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <span className="text-sm text-muted-foreground">Guest Mode</span>
+              <span className="hidden text-xs uppercase tracking-[0.16em] text-muted-foreground sm:inline">Guest Mode</span>
             )}
 
             <Button
@@ -116,13 +116,13 @@ function ThemeProvider({
               aria-label="Toggle theme"
               title="Toggle Theme"
             >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="pt-20">{children}</div>
+      <div>{children}</div>
     </>
   )
 }

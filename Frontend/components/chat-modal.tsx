@@ -1,174 +1,116 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { io, Socket } from "socket.io-client"
 import axios from "axios"
+import { ChatContainer } from "@/components/chat-container"
+import { ChatInput } from "@/components/chat-input"
 
 interface Message {
-    id: string
-    senderId: string
-    content: string
-    createdAt: string
-    sender: {
-        username: string
-    }
+  id: string
+  senderId: string
+  content: string
+  createdAt: string
+  sender: {
+    username: string
+  }
 }
 
 interface Room {
-    id: string
-    name: string
-    members: { user: { username: string } }[]
+  id: string
+  name: string
+  members: { user: { username: string } }[]
 }
 
 interface ChatModalProps {
-    isOpen: boolean
-    onOpenChange: (open: boolean) => void
-    roomId: string | null
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+  roomId: string | null
 }
 
 export function ChatModal({ isOpen, onOpenChange, roomId }: ChatModalProps) {
-    const [messages, setMessages] = useState<Message[]>([])
-    const [inputValue, setInputValue] = useState("")
-    const [room, setRoom] = useState<Room | null>(null)
-    const [currentUser, setCurrentUser] = useState<any>(null)
-    const socketRef = useRef<Socket | null>(null)
-    const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [room, setRoom] = useState<Room | null>(null)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const socketRef = useRef<Socket | null>(null)
 
-    useEffect(() => {
-        if (!isOpen || !roomId) return
+  useEffect(() => {
+    if (!isOpen || !roomId) return
 
-        // Fetch current user
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
-            .then(res => setCurrentUser(res.data))
-            .catch(err => console.error("Failed to fetch user", err))
+    axios
+      .get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
+      .then((res) => setCurrentUser(res.data))
+      .catch((err) => console.error("Failed to fetch user", err))
 
-        // Fetch room details
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}`, { withCredentials: true })
-            .then(res => setRoom(res.data))
-            .catch(err => console.error("Failed to fetch room", err))
+    axios
+      .get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}`, { withCredentials: true })
+      .then((res) => setRoom(res.data))
+      .catch((err) => console.error("Failed to fetch room", err))
 
-        // Fetch existing messages
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`, { withCredentials: true })
-            .then(res => setMessages(res.data))
-            .catch(err => console.error("Failed to fetch messages", err))
+    axios
+      .get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`, { withCredentials: true })
+      .then((res) => setMessages(res.data))
+      .catch((err) => console.error("Failed to fetch messages", err))
 
-        // Initialize Socket.io
-        socketRef.current = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
-            withCredentials: true,
-        })
+    socketRef.current = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
+      withCredentials: true,
+    })
 
-        socketRef.current.emit("joinRoom", roomId)
+    socketRef.current.emit("joinRoom", roomId)
 
-        socketRef.current.on("newMessage", (message: Message) => {
-            setMessages((prev) => [...prev, message])
-        })
+    socketRef.current.on("newMessage", (message: Message) => {
+      setMessages((prev) => [...prev, message])
+    })
 
-        return () => {
-            socketRef.current?.disconnect()
-        }
-    }, [isOpen, roomId])
-
-    useEffect(() => {
-        if (isOpen) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-        }
-    }, [messages, isOpen])
-
-    const handleSendMessage = async () => {
-        if (!inputValue.trim() || !roomId) return
-
-        try {
-            await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`,
-                { content: inputValue },
-                { withCredentials: true }
-            )
-            setInputValue("")
-        } catch (error) {
-            console.error("Failed to send message:", error)
-        }
+    return () => {
+      socketRef.current?.disconnect()
     }
+  }, [isOpen, roomId])
 
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-w-[95%] h-[90vh] sm:h-[600px] flex flex-col p-0 gap-0 border-border bg-card">
-                <DialogHeader className="p-3 sm:p-4 border-b border-border">
-                    <DialogTitle className="flex items-center justify-between pr-6 sm:pr-8">
-                        <span className="text-base sm:text-lg">{room?.name || "Chat"}</span>
-                        <span className="text-xs font-normal text-muted-foreground">
-                            {room?.members?.length || 0} members
-                        </span>
-                    </DialogTitle>
-                    <DialogDescription className="sr-only">
-                        Chat conversation for {room?.name || "this group"}
-                    </DialogDescription>
-                </DialogHeader>
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || !roomId) return
 
-                <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-                    {messages.map((message, index) => {
-                        const isMe = message.senderId === currentUser?.id
-                        const messageKey = message.id || `${message.senderId}-${message.createdAt}-${index}-${message.content}`
-                        return (
-                            <div key={messageKey} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                                <div
-                                    className={`max-w-[85%] sm:max-w-[80%] px-2.5 sm:px-3 py-2 rounded-lg shadow-sm ${isMe
-                                        ? "bg-primary text-primary-foreground rounded-tr-none"
-                                        : "bg-white dark:bg-gray-800 text-foreground rounded-tl-none border border-border"
-                                        }`}
-                                >
-                                    {!isMe && message.sender && (
-                                        <p className="text-xs font-bold mb-1 text-orange-600 dark:text-orange-400">
-                                            {message.sender.username}
-                                        </p>
-                                    )}
-                                    <p className="text-xs sm:text-sm leading-relaxed wrap-break-word">{message.content}</p>
-                                    <p className={`text-[10px] mt-1 text-right ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                                        {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                    </p>
-                                </div>
-                            </div>
-                        )
-                    })}
-                    <div ref={messagesEndRef} />
-                </div>
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`,
+        { content: message },
+        { withCredentials: true },
+      )
+    } catch (error) {
+      console.error("Failed to send message:", error)
+    }
+  }
 
-                <div className="p-3 sm:p-4 border-t border-border bg-background">
-                    <div className="flex gap-2">
-                        <Input
-                            type="text"
-                            placeholder="Type your message..."
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                            className="flex-1 text-sm"
-                        />
-                        <Button onClick={handleSendMessage} size="icon" className="shrink-0">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="h-4 w-4"
-                            >
-                                <path d="m22 2-7 20-4-9-9-4Z" />
-                                <path d="M22 2 11 13" />
-                            </svg>
-                        </Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
+  const mappedMessages = messages.map((message) => ({
+    id: message.id,
+    sender: message.senderId === currentUser?.id ? "You" : message.sender.username,
+    text: message.content,
+    timestamp: new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  }))
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="h-[90vh] max-w-[95%] border border-border bg-card p-0 sm:h-[680px] sm:max-w-2xl">
+        <DialogHeader className="border-b border-border p-4">
+          <DialogTitle className="flex items-center justify-between pr-6">
+            <span>{room?.name || "Chat"}</span>
+            <span className="font-mono text-xs text-muted-foreground">{room?.members?.length || 0} members</span>
+          </DialogTitle>
+          <DialogDescription className="sr-only">Chat conversation for {room?.name || "this group"}</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+          <ChatContainer messages={mappedMessages} compact />
+          <ChatInput onSendMessage={handleSendMessage} compact />
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }

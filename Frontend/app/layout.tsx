@@ -1,13 +1,7 @@
 import type React from "react"
-import { Poppins } from "next/font/google"
 import "./globals.css"
 import ClientLayout from "./ClientLayout"
 import { AuthProvider } from "../contexts/authContext"
-
-const _poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-})
 
 export default function RootLayout({
   children,
@@ -15,8 +9,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans antialiased ${_poppins.className}`}>
+    <html lang="en" suppressHydrationWarning className="dark">
+      <body className="font-sans antialiased">
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
@@ -28,8 +22,8 @@ export default function RootLayout({
 export const metadata = {
   title: "SettleMate",
   description: "Split expenses with friends",
-  generator: 'v0.app',
+  generator: "v0.app",
   icons: {
-    icon: '/favicon.png',
+    icon: "/favicon.png",
   },
-};
+}

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import {
   Dialog,
   DialogContent,
@@ -28,7 +27,7 @@ interface FriendBalance {
 }
 
 export default function DashboardPage() {
-  const { user, loading } = useAuthGuard()
+  const { loading } = useAuthGuard()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [groups, setGroups] = useState<any[]>([])
@@ -86,7 +85,6 @@ export default function DashboardPage() {
   const calculateBalances = async (rooms: any[]) => {
     let owed = 0
     let owe = 0
-    const friendsMap: Record<string, FriendBalance> = {}
 
     for (const room of rooms) {
       try {
@@ -104,6 +102,7 @@ export default function DashboardPage() {
         console.error(`Failed to fetch balances for room ${room.id}`, err)
       }
     }
+
     setTotalOwed(owed)
     setTotalOwe(owe)
   }
@@ -134,10 +133,9 @@ export default function DashboardPage() {
     try {
       const payload = {
         ...data,
-        members: selectedUsers
+        members: selectedUsers,
       }
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/rooms`, payload, { withCredentials: true })
-      console.log(response.data)
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/rooms`, payload, { withCredentials: true })
       setIsOpen(false)
       reset()
       setSelectedUsers([])
@@ -147,212 +145,117 @@ export default function DashboardPage() {
     }
   }
 
+  const net = totalOwed - totalOwe
+
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12">
-        {/* Header with CTA */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-12">
-          <div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2">Dashboard</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Manage your shared expenses efficiently</p>
-          </div>
-          <Link href="/expenses/new">
-            <Button size="lg" className="font-semibold w-full sm:w-auto">
-              Add Expense
-            </Button>
-          </Link>
+    <main className="app-shell min-h-[calc(100vh-4rem)] space-y-4">
+      <section className="line-panel grid gap-6 p-6 md:grid-cols-[1.2fr_auto] md:items-end md:p-8">
+        <div>
+          <p className="muted-label">/// Dashboard</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.03em] md:text-6xl">Your expense command center</h1>
+          <p className="mt-3 text-muted-foreground">Manage balances, groups, invites, and chat rooms in one place.</p>
         </div>
+        <Link href="/expenses/new">
+          <Button size="lg">Add Expense</Button>
+        </Link>
+      </section>
 
-        {/* Bento Grid - Row 1: Balance Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 sm:mb-6">
-          {/* Total Balance Card - Large */}
-          <Card className="md:col-span-2 p-4 sm:p-6 md:p-8 border border-border bg-card hover:border-foreground/20 transition-all duration-300">
-            <p className="text-muted-foreground text-xs sm:text-sm font-medium mb-3 sm:mb-4">Overall Balance</p>
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
-              <div>
-                <p className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 ${totalOwed - totalOwe >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  ₹{(totalOwed - totalOwe).toFixed(2)}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  {totalOwed - totalOwe >= 0 ? "You are owed in total" : "You owe in total"}
-                </p>
-              </div>
-              <div className="text-right hidden sm:block">
-                <div className="inline-block bg-secondary rounded-lg p-4">
-                  <ResponsiveContainer width={150} height={120}>
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: "Owed to you", value: totalOwed },
-                          { name: "You owe", value: totalOwe },
-                        ]}
-                        innerRadius={40}
-                        outerRadius={60}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        <Cell fill="#16a34a" /> {/* Green for owed to you */}
-                        <Cell fill="#dc2626" /> {/* Red for you owe */}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+      <section className="grid gap-3 md:grid-cols-3">
+        <Card className="line-panel p-6 md:col-span-2">
+          <p className="muted-label">Overall Balance</p>
+          <p className={`mt-6 text-5xl font-semibold tracking-[-0.03em] ${net >= 0 ? "text-green-400" : "text-red-400"}`}>
+            ₹{net.toFixed(2)}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{net >= 0 ? "You are owed in total" : "You owe in total"}</p>
+          <div className="mt-8 grid gap-3 md:grid-cols-2">
+            <div className="border border-border p-4">
+              <p className="muted-label">You Are Owed</p>
+              <p className="mt-3 text-3xl font-semibold text-green-400">₹{totalOwed.toFixed(2)}</p>
             </div>
-          </Card>
-
-          {/* Quick Stats */}
-          <Card className="p-4 sm:p-6 md:p-8 border border-border bg-card hover:border-foreground/20 transition-all duration-300">
-            <div className="space-y-4 sm:space-y-6">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Are Owed</p>
-                <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalOwed.toFixed(2)}</p>
-              </div>
-              <div className="border-t border-border pt-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">You Owe</p>
-                <p className="text-2xl sm:text-3xl font-bold text-red-600">₹{totalOwe.toFixed(2)}</p>
-              </div>
+            <div className="border border-border p-4">
+              <p className="muted-label">You Owe</p>
+              <p className="mt-3 text-3xl font-semibold text-red-400">₹{totalOwe.toFixed(2)}</p>
             </div>
-          </Card>
-        </div>
-
-        {/* Bento Grid - Row 2: Charts and Groups */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
-          {/* Spending Chart - Large */}
-          <Card className="lg:col-span-2 p-4 sm:p-6 md:p-8 border border-border bg-card">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold">Monthly Spending</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground">Last 6 months overview</p>
-              </div>
-            </div>
-            <div className="h-[200px] sm:h-[280px] flex items-center justify-center text-muted-foreground text-sm">
-              Chart data aggregation not implemented yet
-            </div>
-          </Card>
-
-          {/* Balance Details - Sidebar */}
-          <Card className="p-4 sm:p-6 md:p-8 border border-border bg-card">
-            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-6">Friend Balances</h2>
-            <div className="space-y-4">
-              <p className="text-muted-foreground text-xs sm:text-sm">Friend balance aggregation not implemented yet</p>
-            </div>
-          </Card>
-        </div>
-
-        {/* Bento Grid - Row 3: Groups */}
-        <Card className="p-4 sm:p-6 md:p-8 border border-border bg-card">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold">My Groups</h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Chat with friends and split expenses</p>
-            </div>
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="font-medium bg-transparent w-full sm:w-auto">
-                  Create Group
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="border border-border bg-card max-w-[95%] sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Create New Group</DialogTitle>
-                  <DialogDescription>Start a new expense group with your friends.</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Group Name</label>
-                    <Input placeholder="e.g., Weekend Trip" {...register("name", { required: true })} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Add Members</label>
-                    <UserSearch
-                      selectedUsers={selectedUsers}
-                      onSelect={setSelectedUsers}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    Create Group
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Pending Invites */}
-            {invites.map((invite) => (
-              <div key={invite.id} className="group">
-                <div className="p-4 sm:p-6 rounded-lg border border-yellow-500/50 bg-yellow-500/10 h-full flex flex-col">
-                  <div className="flex items-start justify-between mb-3 sm:mb-4">
-                    <h3 className="font-bold text-base sm:text-lg">{invite.room.name}</h3>
-                    <span className="text-xs font-bold px-2 sm:px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-600">
-                      Invite
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3 sm:mb-4">Invited by {invite.fromUser.username}</p>
-                  <div className="flex gap-2 mt-auto pt-3 sm:pt-4 border-t border-yellow-500/20">
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
-                      onClick={() => handleInviteResponse(invite.id, "ACCEPT")}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50 text-xs sm:text-sm"
-                      onClick={() => handleInviteResponse(invite.id, "REJECT")}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Active Groups */}
-            {groups.map((group) => (
-              <div key={group.id} className="group">
-                <div className="p-4 sm:p-6 rounded-lg border border-border bg-secondary hover:bg-muted transition-all duration-300 cursor-pointer h-full flex flex-col">
-                  <div className="flex items-start justify-between mb-3 sm:mb-4">
-                    <h3 className="font-bold text-base sm:text-lg">{group.name}</h3>
-                    {/* Balance display would require fetching group balances, omitting for now */}
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3 sm:mb-4">{group.members?.length || 0} members</p>
-                  <div className="flex gap-2 mt-auto pt-3 sm:pt-4 border-t border-border">
-                    <Link href={`/groups/${group.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full bg-transparent text-xs sm:text-sm">
-                        View
-                      </Button>
-                    </Link>
-                    <Button size="sm" className="w-full flex-1 text-xs sm:text-sm" onClick={() => openChat(group.id)}>
-                      Chat
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <ChatModal
-            isOpen={isChatOpen}
-            onOpenChange={setIsChatOpen}
-            roomId={activeChatRoomId}
-          />
         </Card>
 
-        {/* Quick Actions Footer */}
-        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-          <Link href="/chat/history" className="w-full sm:w-auto">
-            <Button variant="outline" className="font-medium bg-transparent w-full sm:w-auto">
-              View Chat History
-            </Button>
-          </Link>
-          <Link href="/settle-up" className="w-full sm:w-auto">
-            <Button className="font-medium w-full sm:w-auto">Settle Up</Button>
-          </Link>
+        <Card className="line-panel p-6">
+          <p className="muted-label">Quick Actions</p>
+          <div className="mt-5 space-y-2">
+            <Link href="/chat/history" className="block">
+              <Button variant="outline" className="w-full justify-between">View Chat History</Button>
+            </Link>
+            <Link href="/settings" className="block">
+              <Button variant="outline" className="w-full justify-between">Open Settings</Button>
+            </Link>
+            <Link href="/settle-up" className="block">
+              <Button className="w-full justify-between">Settle Up</Button>
+            </Link>
+          </div>
+        </Card>
+      </section>
+
+      <Card className="line-panel p-6">
+        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="muted-label">/// Groups</p>
+            <h2 className="text-2xl font-semibold tracking-[-0.02em]">My Rooms</h2>
+          </div>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">Create Group</Button>
+            </DialogTrigger>
+            <DialogContent className="border border-border bg-card sm:max-w-[520px]">
+              <DialogHeader>
+                <DialogTitle>Create New Group</DialogTitle>
+                <DialogDescription>Start a new expense room with your friends.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Group Name</label>
+                  <Input placeholder="Weekend Trip" {...register("name", { required: true })} />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Add Members</label>
+                  <UserSearch selectedUsers={selectedUsers} onSelect={setSelectedUsers} />
+                </div>
+                <Button type="submit" className="w-full">Create Group</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
-      </div>
+
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {invites.map((invite) => (
+            <div key={invite.id} className="line-panel p-4">
+              <div className="flex items-start justify-between">
+                <h3 className="text-lg font-semibold">{invite.room.name}</h3>
+                <span className="font-mono text-xs text-yellow-300">INVITE</span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">Invited by {invite.fromUser.username}</p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button size="sm" onClick={() => handleInviteResponse(invite.id, "ACCEPT")}>Accept</Button>
+                <Button size="sm" variant="outline" onClick={() => handleInviteResponse(invite.id, "REJECT")}>Reject</Button>
+              </div>
+            </div>
+          ))}
+
+          {groups.map((group) => (
+            <div key={group.id} className="line-panel p-4">
+              <h3 className="text-lg font-semibold">{group.name}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{group.members?.length || 0} members</p>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <Link href={`/groups/${group.id}`}>
+                  <Button size="sm" variant="outline" className="w-full">View</Button>
+                </Link>
+                <Button size="sm" className="w-full" onClick={() => openChat(group.id)}>Chat</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <ChatModal isOpen={isChatOpen} onOpenChange={setIsChatOpen} roomId={activeChatRoomId} />
     </main>
   )
 }

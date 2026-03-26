@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { io, Socket } from "socket.io-client"
 import axios from "axios"
 import { useParams } from "next/navigation"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
-import { Loader2 } from "lucide-react"
+import { Loader2, ArrowLeft } from "lucide-react"
+import { ChatContainer } from "@/components/chat-container"
+import { ChatInput } from "@/components/chat-input"
 
 interface Message {
   id: string
@@ -27,15 +27,10 @@ interface Room {
   members: { user: { username: string } }[]
 }
 
-interface ChatRoomProps {
-  params: Promise<{ id: string }>
-}
-
 export default function ChatRoom() {
-  const { user, loading } = useAuthGuard()
+  const { loading } = useAuthGuard()
   const params = useParams<{ id: string }>()
   const [messages, setMessages] = useState<Message[]>([])
-  const [inputValue, setInputValue] = useState("")
   const [room, setRoom] = useState<Room | null>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const socketRef = useRef<Socket | null>(null)
@@ -45,22 +40,21 @@ export default function ChatRoom() {
 
   useEffect(() => {
     if (!loading) {
-      // Fetch current user
-      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
-        .then(res => setCurrentUser(res.data))
-        .catch(err => console.error("Failed to fetch user", err))
+      axios
+        .get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, { withCredentials: true })
+        .then((res) => setCurrentUser(res.data))
+        .catch((err) => console.error("Failed to fetch user", err))
 
-      // Fetch room details
-      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}`, { withCredentials: true })
-        .then(res => setRoom(res.data))
-        .catch(err => console.error("Failed to fetch room", err))
+      axios
+        .get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}`, { withCredentials: true })
+        .then((res) => setRoom(res.data))
+        .catch((err) => console.error("Failed to fetch room", err))
 
-      // Fetch existing messages
-      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`, { withCredentials: true })
-        .then(res => setMessages(res.data))
-        .catch(err => console.error("Failed to fetch messages", err))
+      axios
+        .get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`, { withCredentials: true })
+        .then((res) => setMessages(res.data))
+        .catch((err) => console.error("Failed to fetch messages", err))
 
-      // Initialize Socket.io
       const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
         withCredentials: true,
       })
@@ -90,75 +84,50 @@ export default function ChatRoom() {
     )
   }
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim()) return
 
     try {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomId}/messages`,
-        { content: inputValue },
-        { withCredentials: true }
+        { content: message },
+        { withCredentials: true },
       )
-      setInputValue("")
     } catch (error) {
       console.error("Failed to send message:", error)
     }
   }
 
+  const mappedMessages = messages.map((message) => ({
+    id: message.id,
+    sender: message.senderId === currentUser?.id ? "You" : message.sender.username,
+    text: message.content,
+    timestamp: new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  }))
+
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-          <div>
-            <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block">
-              ← Back to Dashboard
-            </Link>
-            <h1 className="text-3xl font-bold">{room?.name || "Loading..."}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{room?.members?.length || 0} members</p>
+    <main className="app-shell min-h-[calc(100vh-4rem)]">
+      <div className="mx-auto max-w-4xl space-y-4">
+        <section className="line-panel p-6 md:p-8">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Link href="/dashboard">
+                  <Button variant="outline" size="icon">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <p className="muted-label">/// Live Room</p>
+              </div>
+              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.02em] md:text-4xl">{room?.name || "Loading..."}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{room?.members?.length || 0} members</p>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* Chat Container */}
-        <Card className="border border-border bg-card p-6 mb-4 h-[500px] overflow-y-auto">
-          <div className="space-y-4">
-            {messages.map((message) => {
-              const isMe = message.senderId === currentUser?.id
-              return (
-                <div key={message.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-xs px-4 py-3 rounded-lg ${isMe
-                      ? "bg-primary text-primary-foreground rounded-br-none"
-                      : "bg-secondary text-foreground rounded-bl-none border border-border"
-                      }`}
-                  >
-                    {!isMe && <p className="text-xs font-bold mb-1">{message.sender.username}</p>}
-                    <p className="text-sm">{message.content}</p>
-                    <p className="text-xs mt-1 opacity-70">
-                      {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-        </Card>
-
-        {/* Message Input */}
-        <div className="flex gap-3">
-          <Input
-            type="text"
-            placeholder="Type your message..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            className="flex-1 bg-card border border-border rounded-lg px-4 py-3"
-          />
-          <Button onClick={handleSendMessage} className="font-medium">
-            Send
-          </Button>
-        </div>
+        <ChatContainer messages={mappedMessages} />
+        <ChatInput onSendMessage={handleSendMessage} />
+        <div ref={messagesEndRef} />
       </div>
     </main>
   )

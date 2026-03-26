@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input"
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void
+  compact?: boolean
 }
 
-export function ChatInput({ onSendMessage }: ChatInputProps) {
+export function ChatInput({ onSendMessage, compact = false }: ChatInputProps) {
   const [value, setValue] = useState("")
 
   const handleSend = () => {
@@ -18,18 +19,16 @@ export function ChatInput({ onSendMessage }: ChatInputProps) {
   }
 
   return (
-    <div className="flex gap-3">
+    <div className={`flex gap-2 ${compact ? "" : "line-panel p-3"}`}>
       <Input
         type="text"
         placeholder="Type your message..."
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyPress={(e) => e.key === "Enter" && handleSend()}
-        className="flex-1 bg-card border border-border rounded-lg px-4 py-3"
+        onKeyDown={(e) => e.key === "Enter" && handleSend()}
+        className="flex-1"
       />
-      <Button onClick={handleSend} className="font-medium">
-        Send
-      </Button>
+      <Button onClick={handleSend} className="px-4">Send</Button>
     </div>
   )
 }

@@ -14,7 +14,7 @@ import { AddMemberModal } from "@/components/add-member-modal"
 import { useState, useEffect } from "react"
 import axios from "axios"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
-import { Settings, UserPlus, Edit } from "lucide-react"
+import { UserPlus, Edit, ArrowLeft } from "lucide-react"
 
 interface Member {
   user: {
@@ -26,7 +26,7 @@ interface Member {
 }
 
 export default function GroupPage() {
-  const { user, loading } = useAuthGuard()
+  const { loading } = useAuthGuard()
   const params = useParams<{ id: string }>()
   const [groupName, setGroupName] = useState("Loading...")
   const [groupDescription, setGroupDescription] = useState("")
@@ -44,17 +44,18 @@ export default function GroupPage() {
   }, [loading, params.id, refreshTrigger])
 
   const fetchGroupData = () => {
-    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${params.id}`, { withCredentials: true })
-      .then(res => {
+    axios
+      .get(`${process.env.NEXT_PUBLIC_API_URL}/rooms/${params.id}`, { withCredentials: true })
+      .then((res) => {
         setGroupName(res.data.name)
         setGroupDescription(res.data.description || "")
         setMembers(res.data.members)
       })
-      .catch(err => console.error("Failed to fetch room", err))
+      .catch((err) => console.error("Failed to fetch room", err))
   }
 
   const handleExpenseAdded = () => {
-    setRefreshTrigger(prev => prev + 1)
+    setRefreshTrigger((prev) => prev + 1)
   }
 
   if (loading) {
@@ -66,115 +67,104 @@ export default function GroupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-6 mb-8">
-          <Link href="/dashboard">
-            <Button variant="outline">← Back</Button>
-          </Link>
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">{groupName}</h1>
-            <p className="text-muted-foreground">{members.length} members</p>
+    <main className="app-shell min-h-[calc(100vh-4rem)] space-y-4">
+      <section className="line-panel p-6 md:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <p className="muted-label">/// Group</p>
+            </div>
+            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.03em] md:text-6xl">{groupName}</h1>
+            <p className="mt-2 text-muted-foreground">{members.length} members</p>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Button onClick={() => setIsAddExpenseOpen(true)}>Add Expense</Button>
+            <Button variant="outline" onClick={() => setIsChatOpen(true)}>Open Chat</Button>
+            <Link href={`/settlements/group/${params.id}`}>
+              <Button variant="outline" className="w-full">Settle Up</Button>
+            </Link>
           </div>
         </div>
+      </section>
 
-        {/* Actions */}
-        <div className="flex gap-4 mb-8">
-          <Button className="font-medium" onClick={() => setIsAddExpenseOpen(true)}>
-            Add Expense
-          </Button>
-          <Button variant="outline" className="font-medium" onClick={() => setIsChatOpen(true)}>
-            Open Chat Room
-          </Button>
-          <Link href={`/settlements/group/${params.id}`}>
-            <Button variant="outline">Settle Up</Button>
-          </Link>
-        </div>
-
-        {/* Grid Layout */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          {/* Group Members */}
-          <Card className="p-6 border border-border">
-            <h2 className="text-lg font-bold mb-4">Members</h2>
-            <div className="space-y-3">
-              <div className="space-y-3">
-                {members.map((member) => (
-                  <div key={member.user.id} className="p-3 rounded-md bg-secondary">
-                    <p className="font-medium">{member.user.name || member.user.username}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
-                  </div>
-                ))}
+      <section className="grid gap-3 lg:grid-cols-[1.1fr_2fr]">
+        <Card className="line-panel p-6">
+          <p className="muted-label">/// Members</p>
+          <div className="mt-4 space-y-2">
+            {members.map((member) => (
+              <div key={member.user.id} className="border border-border p-3">
+                <p className="font-semibold">{member.user.name || member.user.username}</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{member.role}</p>
               </div>
-            </div>
-          </Card>
-        </div>
+            ))}
+          </div>
+        </Card>
 
-        {/* Tabs */}
-        <Tabs defaultValue="expenses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-secondary">
-            <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="balances">Balances</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+        <Tabs defaultValue="expenses" className="space-y-3">
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border border-border bg-card p-1">
+            <TabsTrigger value="expenses" className="rounded-none">Expenses</TabsTrigger>
+            <TabsTrigger value="balances" className="rounded-none">Balances</TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-none">Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="expenses" className="mt-6">
-            <ExpenseList roomId={params.id} refreshTrigger={refreshTrigger} />
+          <TabsContent value="expenses" className="m-0">
+            <Card className="line-panel p-5">
+              <ExpenseList roomId={params.id} refreshTrigger={refreshTrigger} />
+            </Card>
           </TabsContent>
 
-          <TabsContent value="balances" className="mt-6">
-            <Balances roomId={params.id} refreshTrigger={refreshTrigger} />
+          <TabsContent value="balances" className="m-0">
+            <Card className="line-panel p-5">
+              <Balances roomId={params.id} refreshTrigger={refreshTrigger} />
+            </Card>
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-6">Group Settings</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+          <TabsContent value="settings" className="m-0">
+            <Card className="line-panel p-5">
+              <h3 className="text-lg font-semibold">Group Settings</h3>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between border border-border p-4">
                   <div>
                     <h4 className="font-medium">Group Name</h4>
                     <p className="text-sm text-muted-foreground">{groupName}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setIsEditGroupOpen(true)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    <Edit className="mr-2 h-3.5 w-3.5" /> Edit
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex items-center justify-between border border-border p-4">
                   <div>
                     <h4 className="font-medium">Description</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {groupDescription || "No description set"}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{groupDescription || "No description set"}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setIsEditGroupOpen(true)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    <Edit className="mr-2 h-3.5 w-3.5" /> Edit
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex items-center justify-between border border-border p-4">
                   <div>
                     <h4 className="font-medium">Members</h4>
                     <p className="text-sm text-muted-foreground">{members.length} members in this group</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setIsAddMemberOpen(true)}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add Members
+                    <UserPlus className="mr-2 h-3.5 w-3.5" /> Add
                   </Button>
                 </div>
               </div>
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </section>
 
-      <ChatModal
-        isOpen={isChatOpen}
-        onOpenChange={setIsChatOpen}
-        roomId={params.id}
-      />
+      <ChatModal isOpen={isChatOpen} onOpenChange={setIsChatOpen} roomId={params.id} />
 
       <AddExpenseModal
         isOpen={isAddExpenseOpen}
